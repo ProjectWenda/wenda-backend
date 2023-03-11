@@ -12,7 +12,7 @@ import (
 
 var API_ENDPOINT string = "https://discord.com/api/v10/oauth2/token"
 var REDIRECT_URI string = "http://localhost:8080/auth"
-var FRONTEND_URI string = "http://localhost:3000"
+var FRONTEND_URI string = "http://localhost:5173"
 
 func GetAuth(c *gin.Context) {
 	// Get params for auth from url
