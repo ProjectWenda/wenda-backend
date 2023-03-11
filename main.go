@@ -1,9 +1,10 @@
 package main
 
 import (
-	auth "app/wenda/api"
 	"fmt"
 	"os"
+
+	"app/wenda/api"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -20,8 +21,8 @@ func main() {
 	load_env()
 
 	fmt.Println(os.Getenv("CLIENT_ID"))
-	//fmt.Println("hi")
 	router := gin.Default()
-	router.GET("/auth", auth.GetAuth)
+	router.GET("/auth", api.GetAuth)
+	router.GET("/tasks", api.GetTasks)
 	router.Run("localhost:8080")
 }
