@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type TaskStatus int64
@@ -19,6 +20,7 @@ const (
 
 type task struct {
 	ID           string     `json:"id"`
+	UID          string     `json:"uid"`
 	TimeCreated  time.Time  `json:"time_created"`
 	LastModified time.Time  `json:"last_modified"`
 	Content      string     `json:"content"`
@@ -26,22 +28,31 @@ type task struct {
 }
 
 var tasks = []task{
-	{ID: "1", TimeCreated: time.Now(), LastModified: time.Now(), Content: "Test Message 1", Status: ToDo},
-	{ID: "2", TimeCreated: time.Now(), LastModified: time.Now(), Content: "Hello Hello", Status: ToDo},
+	{ID: "1", UID: "$2a$10$xesny5lQml6vHUltQ7Diw.iOARAQrr3nw5GBqehg6BzWAKbm8r2AC", TimeCreated: time.Now(), LastModified: time.Now(), Content: "Test Message 1", Status: ToDo},
+	{ID: "1", UID: "gaming", TimeCreated: time.Now(), LastModified: time.Now(), Content: "Hello Hello", Status: ToDo},
 }
 
-// TODO: tasks specific to each user
-
 func GetTasks(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, tasks)
+	uid := c.Query("uid")
+
+	users_tasks := []task{}
+	// SELECT * FROM tasks WITH tasks.uid == uid
+	for _, task := range tasks {
+		if task.UID == uid {
+			users_tasks = append(users_tasks, task)
+		}
+	}
+
+	c.IndentedJSON(http.StatusOK, users_tasks)
 }
 
 func GetTaskByID(c *gin.Context) {
 	taskid := c.Query("task_id")
-	//uid := c.Query("uid")
+	uid := c.Query("uid")
 
+	// SELECT * FROM tasks WITH tasks.uid == uid AND task.id == id
 	for _, task := range tasks {
-		if task.ID == taskid {
+		if task.UID == uid && task.ID == taskid {
 			c.IndentedJSON(http.StatusOK, task)
 			return
 		}
@@ -51,21 +62,27 @@ func GetTaskByID(c *gin.Context) {
 }
 
 func PostTask(c *gin.Context) {
-	//uid := c.Query("uid")
+	uid := c.Query("uid")
 	var newTask task
 
 	if err := c.BindJSON(&newTask); err != nil {
 		fmt.Println("JSON formatted incorrectly in postTasks")
 	}
 
+	// Place UID and Task ID
+	newTask.UID = uid
+	newTask.ID = uuid.New().String()
+	newTask.TimeCreated = time.Now()
+	newTask.LastModified = time.Now()
+
 	tasks = append(tasks, newTask)
 	c.IndentedJSON(http.StatusCreated, newTask)
 }
 
 func UpdateTask(c *gin.Context) {
-	//uid := c.Query("uid")
+	uid := c.Query("uid")
 	taskid := c.Query("task_id")
-	content := c.Query("new_content")
+	content := c.Query("content")
 	status, err := strconv.Atoi(c.Query("status"))
 
 	// verify status is valid
@@ -75,10 +92,12 @@ func UpdateTask(c *gin.Context) {
 	}
 
 	for i, task := range tasks {
-		if task.ID == taskid {
+		if task.UID == uid && task.ID == taskid {
 			tasks[i].Content = content
 			tasks[i].Status = TaskStatus(status)
+			tasks[i].LastModified = time.Now()
 			c.IndentedJSON(http.StatusOK, task)
+			return
 		}
 	}
 
@@ -86,13 +105,13 @@ func UpdateTask(c *gin.Context) {
 }
 
 func DeleteTask(c *gin.Context) {
-	//uid := c.Query("uid")
+	uid := c.Query("uid")
 	taskid := c.Query("task_id")
 
 	for i, task := range tasks {
-		if task.ID == taskid {
+		if task.UID == uid && task.ID == taskid {
 			tasks = append(tasks[:i], tasks[i+1:]...)
-			c.IndentedJSON(http.StatusOK, gin.H{"message": "deleted task " + taskid})
+			c.IndentedJSON(http.StatusOK, task)
 			return
 		}
 	}

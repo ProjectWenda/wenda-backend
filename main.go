@@ -26,6 +26,7 @@ func bind_task_crud(router *gin.Engine) {
 
 func bind_discord(router *gin.Engine) {
 	router.GET("/user", api.GetDiscordUser)
+	router.GET("/friends", api.GetDiscordFriends)
 }
 
 func main() {
