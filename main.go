@@ -24,6 +24,10 @@ func bind_task_crud(router *gin.Engine) {
 	router.DELETE("/task", api.DeleteTask)
 }
 
+func bind_discord(router *gin.Engine) {
+	router.GET("/user", api.GetDiscordUser)
+}
+
 func main() {
 
 	load_env()
@@ -31,6 +35,7 @@ func main() {
 	fmt.Println(os.Getenv("CLIENT_ID"))
 	router := gin.Default()
 	bind_task_crud(router)
+	bind_discord(router)
 	router.GET("/auth", api.GetAuth)
 	router.Run("localhost:8080")
 }
