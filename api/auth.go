@@ -55,9 +55,10 @@ func GetAuth(c *gin.Context) {
 	// Map hash -> token
 	User_id_token[authuid] = res["access_token"].(string) // type to string
 
-	// URL Encode to redirect to frontend
-	frontend_params := url.Values{"authuid": {authuid}}
+	// Set cookie for redirect
+	authid_cookie := http.Cookie{Name: "authuid", Value: authuid}
+	http.SetCookie(c.Writer, &authid_cookie)
 
 	// Redirect back to frontend
-	c.Redirect(http.StatusMovedPermanently, FRONTEND_URI+"?"+frontend_params.Encode())
+	c.Redirect(http.StatusMovedPermanently, FRONTEND_URI)
 }
