@@ -6,6 +6,7 @@ import (
 
 	"app/wenda/api"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -29,14 +30,24 @@ func bind_discord(router *gin.Engine) {
 	router.GET("/friends", api.GetDiscordFriends)
 }
 
+func set_cors(router *gin.Engine) {
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:5173", "http://localhost:8080"}
+	router.Use(cors.New(config))
+}
+
 func main() {
-
+	// Load ENV
 	load_env()
-
 	fmt.Println(os.Getenv("CLIENT_ID"))
+	// Create router
 	router := gin.Default()
+	// CORS config
+	set_cors(router)
+	// Endpoints
 	bind_task_crud(router)
 	bind_discord(router)
 	router.GET("/auth", api.GetAuth)
+	// Run
 	router.Run("localhost:8080")
 }

@@ -19,10 +19,10 @@ const (
 )
 
 type task struct {
-	ID           string     `json:"id"`
-	UID          string     `json:"uid"`
-	TimeCreated  time.Time  `json:"time_created"`
-	LastModified time.Time  `json:"last_modified"`
+	ID           string     `json:"id,omitempty"`
+	UID          string     `json:"uid,omitempty"`
+	TimeCreated  time.Time  `json:"time_created,omitempty"`
+	LastModified time.Time  `json:"last_modified,omitempty"`
 	Content      string     `json:"content"`
 	Status       TaskStatus `json:"status"`
 }
