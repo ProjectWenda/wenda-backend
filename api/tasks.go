@@ -6,36 +6,21 @@ import (
 	"strconv"
 	"time"
 
+	"app/wenda/db"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-type TaskStatus int64
-
-const (
-	ToDo TaskStatus = iota
-	Completed
-	Archived
-)
-
-type task struct {
-	ID           string     `json:"id,omitempty"`
-	UID          string     `json:"uid,omitempty"`
-	TimeCreated  time.Time  `json:"time_created,omitempty"`
-	LastModified time.Time  `json:"last_modified,omitempty"`
-	Content      string     `json:"content"`
-	Status       TaskStatus `json:"status"`
-}
-
-var tasks = []task{
-	{ID: "1", UID: "$2a$10$xesny5lQml6vHUltQ7Diw.iOARAQrr3nw5GBqehg6BzWAKbm8r2AC", TimeCreated: time.Now(), LastModified: time.Now(), Content: "Test Message 1", Status: ToDo},
-	{ID: "1", UID: "gaming", TimeCreated: time.Now(), LastModified: time.Now(), Content: "Hello Hello", Status: ToDo},
+var tasks = []db.Task{
+	{ID: "1", UID: "$2a$10$xesny5lQml6vHUltQ7Diw.iOARAQrr3nw5GBqehg6BzWAKbm8r2AC", TimeCreated: time.Now(), LastModified: time.Now(), Content: "Test Message 1", Status: db.ToDo},
+	{ID: "1", UID: "gaming", TimeCreated: time.Now(), LastModified: time.Now(), Content: "Hello Hello", Status: db.ToDo},
 }
 
 func GetTasks(c *gin.Context) {
 	uid := c.Query("uid")
 
-	users_tasks := []task{}
+	users_tasks := []db.Task{}
 	// SELECT * FROM tasks WITH tasks.uid == uid
 	for _, task := range tasks {
 		if task.UID == uid {
@@ -63,7 +48,7 @@ func GetTaskByID(c *gin.Context) {
 
 func PostTask(c *gin.Context) {
 	uid := c.Query("uid")
-	var newTask task
+	var newTask db.Task
 
 	if err := c.BindJSON(&newTask); err != nil {
 		fmt.Println("JSON formatted incorrectly in postTasks")
@@ -94,7 +79,7 @@ func UpdateTask(c *gin.Context) {
 	for i, task := range tasks {
 		if task.UID == uid && task.ID == taskid {
 			tasks[i].Content = content
-			tasks[i].Status = TaskStatus(status)
+			tasks[i].Status = db.TaskStatus(status)
 			tasks[i].LastModified = time.Now()
 			c.IndentedJSON(http.StatusOK, task)
 			return

@@ -23,3 +23,19 @@ func SelectAll() map[string]interface{} {
 	fmt.Println(results) // Selected rows
 	return results
 }
+
+func InsertUser(user User) []User {
+	supabase := create_client()
+
+	fmt.Println(user)
+	var results []User
+	supabase.DB.From("users").Insert(user).Execute(&results)
+
+	// TODO: seems like this returns an error even if it isn't actually failing
+	// see: https://github.com/nedpals/supabase-go/issues/3
+	// will need to write a small library ourselves to handle interaction with
+	// supabase rather than using this
+
+	fmt.Println(results)
+	return results
+}

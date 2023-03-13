@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 
+	"app/wenda/db"
 	"app/wenda/utils"
 
 	"github.com/gin-gonic/gin"
@@ -50,15 +51,28 @@ func GetAuth(c *gin.Context) {
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
 
+	token := res["access_token"].(string)
 	// Hash the token
-	authuid := utils.HashToken(res["access_token"].(string))
+	authuid := utils.HashToken(token)
+
+	discord_id, discord_name := DiscordAuthData(token)
+
+	new_user := db.User{
+		UID:         authuid,
+		Token:       res["access_token"].(string),
+		DiscordID:   discord_id,
+		DiscordName: discord_name,
+	}
+
+	db.InsertUser(new_user)
+
 	// Map hash -> token
 	User_id_token[authuid] = res["access_token"].(string) // type to string
 
 	// Set cookie for redirect
 	authid_cookie := http.Cookie{
-		Name: "authuid",
-		Value: authuid,
+		Name:   "authuid",
+		Value:  authuid,
 		MaxAge: 604800, //1 week
 		Secure: true,
 	}
