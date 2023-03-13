@@ -19,7 +19,6 @@ func GetTasks(c *gin.Context) {
 
 func GetTaskByID(c *gin.Context) {
 	uid, taskid := c.Query("uid"), c.Query("task_id")
-
 	// SELECT * FROM tasks WITH tasks.uid == uid AND task.id == id
 	user_task := db.SelectUserTaskByID(uid, taskid)
 	if (user_task == db.Task{}) {
@@ -35,8 +34,7 @@ func PostTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "JSON formatted incorrectly in postTasks"})
 	}
 	newTask.DiscordID = db.SelectDiscordID(uid)
-	// TODO: get taskid somehow
-	db.InsertTask(newTask)
+	newTask.ID = db.InsertTask(newTask)
 	c.IndentedJSON(http.StatusCreated, newTask)
 }
 
@@ -54,7 +52,6 @@ func UpdateTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + taskid + " not found"})
 		return
 	}
-
 	c.IndentedJSON(http.StatusOK, db.SelectUserTaskByID(uid, taskid))
 }
 
