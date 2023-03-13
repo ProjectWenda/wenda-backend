@@ -2,7 +2,7 @@ package db
 
 import "time"
 
-type TaskStatus int64
+type TaskStatus int8
 
 const (
 	ToDo TaskStatus = iota
@@ -18,10 +18,10 @@ type User struct {
 }
 
 type Task struct {
-	ID           string     `json:"id,omitempty"`
-	UID          string     `json:"uid,omitempty"`
-	TimeCreated  time.Time  `json:"time_created,omitempty"`
-	LastModified time.Time  `json:"last_modified,omitempty"`
-	Content      string     `json:"content"`
-	Status       TaskStatus `json:"status"`
+	ID           int8      `json:"id"`
+	DiscordID    string    `json:"uid"`
+	TimeCreated  time.Time `json:"time_created"`
+	LastModified time.Time `json:"last_modified"`
+	Content      string    `json:"content"`
+	Status       int8      `json:"status"`
 }

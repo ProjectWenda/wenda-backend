@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"app/wenda/api"
 	"app/wenda/db"
@@ -40,8 +39,10 @@ func set_cors(router *gin.Engine) {
 func main() {
 	// Load ENV
 	load_env()
-	db.SelectAll()
-	fmt.Println(os.Getenv("CLIENT_ID"))
+	db.DB()
+	// fmt.Println(db.SelectAll())
+	// db.SelectDiscordID("$2a$10$7XRZE0DdXqlhhPXiBNJBae2unc36BOgZex3nG5aEYSVo8OmP7yo4i")
+	// fmt.Println(db.SelectUserTasks("150708634370703360"))
 	// Create router
 	router := gin.Default()
 	// CORS config
