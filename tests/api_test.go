@@ -55,7 +55,7 @@ func init_test() {
 
 func TestPostTask(t *testing.T) {
 	init_test()
-	body := `{"content": "test task", "status": 1, "taskDate": "2023-06-20T00:00:00Z"}`
+	body := `{"content": "test task", "status": 1, "taskDate": "2023-06-20T03:00:00Z"}`
 	apitest.New().
 		Handler(handler.Router()).
 		Post("/task").
@@ -66,19 +66,43 @@ func TestPostTask(t *testing.T) {
 		Assert(jsonpath.Equal(`$.discordID`, "490574905985728523")).
 		Assert(jsonpath.Matches(`$.status`, "1")).
 		Assert(jsonpath.Equal(`$.content`, "test task")).
-		Assert(jsonpath.Equal(`$.taskDate`, "2023-06-20T00:00:00Z")).
+		Assert(jsonpath.Equal(`$.taskDate`, "2023-06-20T03:00:00Z")).
+		Status(http.StatusCreated).
+		End()
+}
+
+func create_task(t *testing.T, body string) {
+	apitest.New().
+		Handler(handler.Router()).
+		Post("/task").
+		Query("uid", UID).
+		JSON(body).
+		Expect(t).
 		Status(http.StatusCreated).
 		End()
 }
 
 func TestGetTasks(t *testing.T) {
 	init_test()
+	// Post some data
+	create_task(t, `{"content": "test task", "status": 1, "taskDate": "2023-06-20T00:00:00Z"}`)
+	create_task(t, `{"content": "random", "status": 0, "taskDate": "2023-03-20T00:00:00Z"}`)
+	create_task(t, `{"content": "aaa", "status": 2, "taskDate": "2025-06-30T01:00:00Z"}`)
+
 	apitest.New().
 		Handler(handler.Router()).
 		Get("/tasks").
 		Query("uid", UID).
 		Expect(t).
-		Body(`[]`).
+		Assert(jsonpath.Matches(`$[0].content`, "test task")).
+		Assert(jsonpath.Matches(`$[0].status`, "1")).
+		Assert(jsonpath.Matches(`$[0].taskDate`, "2023-06-20T00:00:00Z")).
+		Assert(jsonpath.Matches(`$[1].content`, "random")).
+		Assert(jsonpath.Matches(`$[1].status`, "0")).
+		Assert(jsonpath.Matches(`$[1].taskDate`, "2023-03-20T00:00:00Z")).
+		Assert(jsonpath.Matches(`$[2].content`, "aaa")).
+		Assert(jsonpath.Matches(`$[2].status`, "2")).
+		Assert(jsonpath.Matches(`$[2].taskDate`, "2025-06-30T01:00:00Z")).
 		Status(http.StatusOK).
 		End()
 }
