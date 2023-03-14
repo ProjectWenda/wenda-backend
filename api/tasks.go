@@ -18,7 +18,7 @@ func GetTasks(c *gin.Context) {
 	// SELECT * FROM tasks WITH tasks.uid == uid
 	users_tasks := db.SelectUserTasks(uid)
 	if len(users_tasks) == 0 {
-		c.IndentedJSON(http.StatusOK, gin.H{})
+		c.IndentedJSON(http.StatusOK, []string{})
 		return
 	}
 	c.IndentedJSON(http.StatusOK, users_tasks)

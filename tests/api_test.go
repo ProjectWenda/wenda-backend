@@ -22,7 +22,7 @@ func load_env() {
 }
 
 func create_table() bool {
-	query := fmt.Sprintf("CREATE TEMP TABLE %s (LIKE %s)", task_table, "tasks")
+	query := fmt.Sprintf("CREATE TEMP TABLE %s AS SELECT * FROM %s LIMIT 0", task_table, "tasks")
 	_, err := db.DB.Exec(query)
 	return err == nil
 }
