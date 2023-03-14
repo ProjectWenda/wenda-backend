@@ -19,7 +19,7 @@ type User struct {
 
 type Task struct {
 	ID           int8      `json:"id"`
-	DiscordID    string    `json:"uid"`
+	DiscordID    string    `json:"discordID"`
 	TimeCreated  time.Time `json:"timeCreated"`
 	LastModified time.Time `json:"lastModified"`
 	Content      string    `json:"content"`
