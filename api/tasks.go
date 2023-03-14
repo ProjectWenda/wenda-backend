@@ -44,25 +44,20 @@ func PostTask(c *gin.Context) {
 		TaskDate string `json:"taskDate"`
 	}
 
-	var post_body PostBody
-	if err := c.BindJSON(&post_body); err != nil {
+	var new_task db.Task
+	if err := c.BindJSON(&new_task); err != nil {
 		fmt.Println(err)
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "JSON formatted incorrectly"})
 		return
 	}
 
-	task_date, err := time.Parse(time_layout, post_body.TaskDate)
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
-		return
-	}
+	// task_date, err := time.Parse(time_layout, post_body.TaskDate)
+	// if err != nil {
+	// 	c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
+	// 	return
+	// }
 
-	new_task := db.Task{
-		DiscordID: db.SelectDiscordID(uid),
-		Content:   post_body.Content,
-		Status:    post_body.Status,
-		TaskDate:  task_date,
-	}
+	new_task.DiscordID = db.SelectDiscordID(uid)
 	new_task.ID = db.InsertTask(new_task)
 	c.IndentedJSON(http.StatusCreated, new_task)
 }

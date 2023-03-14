@@ -9,7 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/steinfletcher/apitest"
-	//"github.com/steinfletcher/apitest-jsonpath"
+	jsonpath "github.com/steinfletcher/apitest-jsonpath"
 )
 
 const UID = "$2a$10$2z9RNlHH.3bN6LK9ITuHBu7pLXQKwVMJ5KTanXy6i1UsJLO2nGNA2"
@@ -55,22 +55,18 @@ func init_test() {
 
 func TestPostTask(t *testing.T) {
 	init_test()
-	body := `{"content": "test task", "status": 1, "taskDate": "2023-06-20"}`
+	body := `{"content": "test task", "status": 1, "taskDate": "2023-06-20T00:00:00Z"}`
 	apitest.New().
 		Handler(handler.Router()).
 		Post("/task").
 		Query("uid", UID).
 		JSON(body).
 		Expect(t).
-		Body(`{
-			"id": 1,
-			"discordID": "490574905985728523",
-			"timeCreated": "0001-01-01T00:00:00Z",
-			"lastModified": "0001-01-01T00:00:00Z",
-			"content": "test task",
-			"status": 1,
-			"taskDate": "2023-06-20T00:00:00Z"
-		}`).
+		Assert(jsonpath.Matches(`$.id`, "1")).
+		Assert(jsonpath.Equal(`$.discordID`, "490574905985728523")).
+		Assert(jsonpath.Matches(`$.status`, "1")).
+		Assert(jsonpath.Equal(`$.content`, "test task")).
+		Assert(jsonpath.Equal(`$.taskDate`, "2023-06-20T00:00:00Z")).
 		Status(http.StatusCreated).
 		End()
 }

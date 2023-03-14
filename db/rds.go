@@ -13,7 +13,7 @@ var DB *sql.DB
 
 var TaskTable string = "tasks"
 
-const time_layout = "2006-01-02"
+const time_layout = "2006-01-02T00:00:00Z"
 
 func InitDB() {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
