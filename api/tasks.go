@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,10 +11,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const time_layout = "2006-01-02"
+
 func GetTasks(c *gin.Context) {
 	uid := c.Query("uid")
 	// SELECT * FROM tasks WITH tasks.uid == uid
 	users_tasks := db.SelectUserTasks(uid)
+	if len(users_tasks) == 0 {
+		c.IndentedJSON(http.StatusOK, gin.H{})
+		return
+	}
 	c.IndentedJSON(http.StatusOK, users_tasks)
 }
 
@@ -29,21 +36,42 @@ func GetTaskByID(c *gin.Context) {
 
 func PostTask(c *gin.Context) {
 	uid := c.Query("uid")
-	var newTask db.Task
-	if err := c.BindJSON(&newTask); err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "JSON formatted incorrectly in postTasks"})
+	// res, _ := ioutil.ReadAll(c.Request.Body)
+	// fmt.Println(string(res))
+	type PostBody struct {
+		Content  string `json:"content"`
+		Status   int8   `json:"status"`
+		TaskDate string `json:"taskDate"`
 	}
-	newTask.DiscordID = db.SelectDiscordID(uid)
-	newTask.ID = db.InsertTask(newTask)
-	c.IndentedJSON(http.StatusCreated, newTask)
+
+	var post_body PostBody
+	if err := c.BindJSON(&post_body); err != nil {
+		fmt.Println(err)
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "JSON formatted incorrectly"})
+		return
+	}
+
+	task_date, err := time.Parse(time_layout, post_body.TaskDate)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
+		return
+	}
+
+	new_task := db.Task{
+		DiscordID: db.SelectDiscordID(uid),
+		Content:   post_body.Content,
+		Status:    post_body.Status,
+		TaskDate:  task_date,
+	}
+	new_task.ID = db.InsertTask(new_task)
+	c.IndentedJSON(http.StatusCreated, new_task)
 }
 
 func UpdateTask(c *gin.Context) {
 	uid, taskid := c.Query("uid"), c.Query("task_id")
 	content := c.Query("content")
 	time_str := c.Query("task_date")
-	const layout = "2006-01-02"
-	task_date, err := time.Parse(layout, time_str)
+	task_date, err := time.Parse(time_layout, time_str)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
 		return

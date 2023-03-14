@@ -9,6 +9,9 @@ require (
 )
 
 require (
+	github.com/PaesslerAG/gval v1.0.0 // indirect
+	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/nedpals/postgrest-go v0.1.3 // indirect
 )
@@ -31,7 +34,10 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nedpals/supabase-go v0.2.0
+	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
+	github.com/steinfletcher/apitest v1.5.14
+	github.com/steinfletcher/apitest-jsonpath v1.7.1
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.9 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
