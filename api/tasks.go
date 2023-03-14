@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"app/wenda/db"
 
@@ -40,13 +41,21 @@ func PostTask(c *gin.Context) {
 func UpdateTask(c *gin.Context) {
 	uid, taskid := c.Query("uid"), c.Query("task_id")
 	content := c.Query("content")
+	time_str := c.Query("task_date")
+	const layout = "2006-01-02"
+	task_date, err := time.Parse(layout, time_str)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
+		return
+	}
 	status, err := strconv.Atoi(c.Query("status"))
 	// verify status is valid
 	if err != nil || (status != 0 && status != 1 && status != 2) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "status should be 0, 1, or 2"})
 		return
 	}
-	if !db.UpdateTask(uid, taskid, content, status) {
+
+	if !db.UpdateTask(uid, taskid, content, status, task_date) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + taskid + " not found"})
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -39,7 +40,7 @@ func SelectAllTasks() []Task {
 	var tasks []Task
 	for rows.Next() {
 		var task Task
-		if err := rows.Scan(&task.ID, &task.DiscordID, &task.TimeCreated, &task.LastModified, &task.Content, &task.Status); err != nil {
+		if err := rows.Scan(&task.ID, &task.DiscordID, &task.TimeCreated, &task.LastModified, &task.Content, &task.Status, &task.TaskDate); err != nil {
 			return tasks
 		}
 		tasks = append(tasks, task)
@@ -60,7 +61,7 @@ func SelectUserTasks(uid string) []Task {
 	var tasks []Task
 	for rows.Next() {
 		var task Task
-		if err := rows.Scan(&task.ID, &task.DiscordID, &task.TimeCreated, &task.LastModified, &task.Content, &task.Status); err != nil {
+		if err := rows.Scan(&task.ID, &task.DiscordID, &task.TimeCreated, &task.LastModified, &task.Content, &task.Status, &task.TaskDate); err != nil {
 			return tasks
 		}
 		tasks = append(tasks, task)
@@ -73,7 +74,7 @@ func SelectUserTaskByID(uid string, task_id string) Task {
 	discord_id := SelectDiscordID(uid)
 	query := fmt.Sprintf("SELECT * FROM tasks WHERE discord_id='%s' AND id='%s'", discord_id, task_id)
 	var task Task
-	err := db.QueryRow(query).Scan(&task.ID, &task.DiscordID, &task.TimeCreated, &task.LastModified, &task.Content, &task.Status)
+	err := db.QueryRow(query).Scan(&task.ID, &task.DiscordID, &task.TimeCreated, &task.LastModified, &task.Content, &task.Status, &task.TaskDate)
 	if err != nil {
 		return Task{}
 	}
@@ -100,7 +101,10 @@ func InsertUser(user User) {
 }
 
 func InsertTask(task Task) int8 {
-	query := fmt.Sprintf("INSERT INTO tasks (discord_id, content, status) VALUES ('%s', '%s', '%d') RETURNING id", task.DiscordID, task.Content, task.Status)
+	query := fmt.Sprintf(
+		"INSERT INTO tasks (discord_id, content, status, task_date) VALUES ('%s', '%s', '%d', '%s') RETURNING id",
+		task.DiscordID, task.Content, task.Status, task.TaskDate,
+	)
 	var id int8
 	err := db.QueryRow(query).Scan(&id)
 	if err != nil {
@@ -109,9 +113,12 @@ func InsertTask(task Task) int8 {
 	return int8(id)
 }
 
-func UpdateTask(uid string, task_id string, content string, status int) bool {
+func UpdateTask(uid string, task_id string, content string, status int, task_date time.Time) bool {
 	discord_id := SelectDiscordID(uid)
-	query := fmt.Sprintf("UPDATE tasks SET content='%s',status='%d' WHERE discord_id='%s' AND id='%s'", content, status, discord_id, task_id)
+	query := fmt.Sprintf(
+		"UPDATE tasks SET content='%s',status='%d',task_date='%s' WHERE discord_id='%s' AND id='%s'",
+		content, status, task_date, discord_id, task_id,
+	)
 	_, err := db.Exec(query)
 	return err == nil
 }

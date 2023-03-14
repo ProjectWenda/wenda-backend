@@ -39,6 +39,7 @@ func set_cors(router *gin.Engine) {
 func main() {
 	// Load ENV
 	load_env()
+	// Initialize DB
 	db.DB()
 	// Create router
 	router := gin.Default()
