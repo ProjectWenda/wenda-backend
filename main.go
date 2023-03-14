@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"app/wenda/api"
+	"app/wenda/db"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -39,7 +39,8 @@ func set_cors(router *gin.Engine) {
 func main() {
 	// Load ENV
 	load_env()
-	fmt.Println(os.Getenv("CLIENT_ID"))
+	// Initialize DB
+	db.DB()
 	// Create router
 	router := gin.Default()
 	// CORS config
