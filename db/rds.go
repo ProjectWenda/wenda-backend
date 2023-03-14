@@ -11,6 +11,8 @@ import (
 
 var db *sql.DB
 
+var TaskTable string = "tasks"
+
 func DB() {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
 		os.Getenv("AWS_HOST"), 5432,
@@ -31,7 +33,7 @@ func DB() {
 }
 
 func SelectAllTasks() []Task {
-	rows, err := db.Query("SELECT * FROM tasks")
+	rows, err := db.Query("SELECT * FROM " + TaskTable)
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +53,7 @@ func SelectAllTasks() []Task {
 
 func SelectUserTasks(uid string) []Task {
 	discord_id := SelectDiscordID(uid)
-	query := fmt.Sprintf("SELECT * FROM tasks WHERE discord_id='%s'", discord_id)
+	query := fmt.Sprintf("SELECT * FROM %s WHERE discord_id='%s'", TaskTable, discord_id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -72,7 +74,7 @@ func SelectUserTasks(uid string) []Task {
 
 func SelectUserTaskByID(uid string, task_id string) Task {
 	discord_id := SelectDiscordID(uid)
-	query := fmt.Sprintf("SELECT * FROM tasks WHERE discord_id='%s' AND id='%s'", discord_id, task_id)
+	query := fmt.Sprintf("SELECT * FROM %s WHERE discord_id='%s' AND id='%s'", TaskTable, discord_id, task_id)
 	var task Task
 	err := db.QueryRow(query).Scan(&task.ID, &task.DiscordID, &task.TimeCreated, &task.LastModified, &task.Content, &task.Status, &task.TaskDate)
 	if err != nil {
@@ -102,8 +104,8 @@ func InsertUser(user User) {
 
 func InsertTask(task Task) int8 {
 	query := fmt.Sprintf(
-		"INSERT INTO tasks (discord_id, content, status, task_date) VALUES ('%s', '%s', '%d', '%s') RETURNING id",
-		task.DiscordID, task.Content, task.Status, task.TaskDate,
+		"INSERT INTO %s (discord_id, content, status, task_date) VALUES ('%s', '%s', '%d', '%s') RETURNING id",
+		TaskTable, task.DiscordID, task.Content, task.Status, task.TaskDate,
 	)
 	var id int8
 	err := db.QueryRow(query).Scan(&id)
@@ -116,8 +118,8 @@ func InsertTask(task Task) int8 {
 func UpdateTask(uid string, task_id string, content string, status int, task_date time.Time) bool {
 	discord_id := SelectDiscordID(uid)
 	query := fmt.Sprintf(
-		"UPDATE tasks SET content='%s',status='%d',task_date='%s' WHERE discord_id='%s' AND id='%s'",
-		content, status, task_date, discord_id, task_id,
+		"UPDATE %s SET content='%s',status='%d',task_date='%s' WHERE discord_id='%s' AND id='%s'",
+		TaskTable, content, status, task_date, discord_id, task_id,
 	)
 	_, err := db.Exec(query)
 	return err == nil
@@ -125,7 +127,7 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 
 func DeleteTask(uid string, task_id string) bool {
 	discord_id := SelectDiscordID(uid)
-	query := fmt.Sprintf("DELETE FROM tasks WHERE discord_id='%s' AND id='%s'", discord_id, task_id)
+	query := fmt.Sprintf("DELETE FROM %s WHERE discord_id='%s' AND id='%s'", TaskTable, discord_id, task_id)
 	_, err := db.Exec(query)
 	return err == nil
 }
