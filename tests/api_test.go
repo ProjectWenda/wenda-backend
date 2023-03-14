@@ -3,6 +3,7 @@ package tests
 import (
 	"app/wenda/db"
 	"app/wenda/handler"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -14,6 +15,20 @@ import (
 
 const UID = "$2a$10$2z9RNlHH.3bN6LK9ITuHBu7pLXQKwVMJ5KTanXy6i1UsJLO2nGNA2"
 const task_table = "temp_tasks"
+
+type PostBody struct {
+	Content  string `json:"content"`
+	Status   int    `json:"status"`
+	TaskDate string `json:"taskDate"`
+}
+
+func (body PostBody) str() string {
+	bodystr, err := json.Marshal(body)
+	if err != nil {
+		fmt.Println("Issue marshaling")
+	}
+	return string(bodystr)
+}
 
 func load_env() {
 	if err := godotenv.Load("../.env"); err != nil {
@@ -71,38 +86,42 @@ func TestPostTask(t *testing.T) {
 		End()
 }
 
-func create_task(t *testing.T, body string) {
+func create_task(t *testing.T, content string, status int, task_date string) PostBody {
+	body := PostBody{
+		Content:  content,
+		Status:   status,
+		TaskDate: task_date,
+	}
+
 	apitest.New().
 		Handler(handler.Router()).
 		Post("/task").
 		Query("uid", UID).
-		JSON(body).
+		JSON(body.str()).
 		Expect(t).
 		Status(http.StatusCreated).
 		End()
+	return body
 }
 
 func TestGetTasks(t *testing.T) {
 	init_test()
 	// Post some data
-	create_task(t, `{"content": "test task", "status": 1, "taskDate": "2023-06-20T00:00:00Z"}`)
-	create_task(t, `{"content": "random", "status": 0, "taskDate": "2023-03-20T00:00:00Z"}`)
-	create_task(t, `{"content": "aaa", "status": 2, "taskDate": "2025-06-30T01:00:00Z"}`)
+	var bodies []PostBody
+	bodies = append(bodies, create_task(t, "test task", 1, "2023-06-20T00:00:01Z"))
+	bodies = append(bodies, create_task(t, "random", 0, "2023-03-20T00:00:00Z"))
+	bodies = append(bodies, create_task(t, "aaa", 2, "2025-06-30T01:00:00Z"))
 
-	apitest.New().
-		Handler(handler.Router()).
-		Get("/tasks").
-		Query("uid", UID).
-		Expect(t).
-		Assert(jsonpath.Matches(`$[0].content`, "test task")).
-		Assert(jsonpath.Matches(`$[0].status`, "1")).
-		Assert(jsonpath.Matches(`$[0].taskDate`, "2023-06-20T00:00:00Z")).
-		Assert(jsonpath.Matches(`$[1].content`, "random")).
-		Assert(jsonpath.Matches(`$[1].status`, "0")).
-		Assert(jsonpath.Matches(`$[1].taskDate`, "2023-03-20T00:00:00Z")).
-		Assert(jsonpath.Matches(`$[2].content`, "aaa")).
-		Assert(jsonpath.Matches(`$[2].status`, "2")).
-		Assert(jsonpath.Matches(`$[2].taskDate`, "2025-06-30T01:00:00Z")).
-		Status(http.StatusOK).
-		End()
+	for i, body := range bodies {
+		apitest.New().
+			Handler(handler.Router()).
+			Get("/tasks").
+			Query("uid", UID).
+			Expect(t).
+			Assert(jsonpath.Matches(fmt.Sprintf(`$[%d].content`, i), body.Content)).
+			Assert(jsonpath.Matches(fmt.Sprintf(`$[%d].status`, i), fmt.Sprint(body.Status))).
+			Assert(jsonpath.Matches(fmt.Sprintf(`$[%d].taskDate`, i), body.TaskDate)).
+			Status(http.StatusOK).
+			End()
+	}
 }
