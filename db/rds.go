@@ -126,7 +126,7 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 	discord_id := SelectDiscordID(uid)
 	query := fmt.Sprintf(
 		"UPDATE %s SET content='%s',status='%d',task_date='%s' WHERE discord_id='%s' AND id='%s'",
-		TaskTable, content, status, task_date, discord_id, task_id,
+		TaskTable, content, status, task_date.Format(time_layout), discord_id, task_id,
 	)
 	_, err := DB.Exec(query)
 	return err == nil

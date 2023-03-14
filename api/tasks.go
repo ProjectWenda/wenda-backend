@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const time_layout = "2006-01-02"
+const time_layout = "2006-01-02T15:04:05Z"
 
 func GetTasks(c *gin.Context) {
 	uid := c.Query("uid")
@@ -25,7 +25,7 @@ func GetTasks(c *gin.Context) {
 }
 
 func GetTaskByID(c *gin.Context) {
-	uid, taskid := c.Query("uid"), c.Query("task_id")
+	uid, taskid := c.Query("uid"), c.Query("taskID")
 	// SELECT * FROM tasks WITH tasks.uid == uid AND task.id == id
 	user_task := db.SelectUserTaskByID(uid, taskid)
 	if (user_task == db.Task{}) {
@@ -36,36 +36,21 @@ func GetTaskByID(c *gin.Context) {
 
 func PostTask(c *gin.Context) {
 	uid := c.Query("uid")
-	// res, _ := ioutil.ReadAll(c.Request.Body)
-	// fmt.Println(string(res))
-	type PostBody struct {
-		Content  string `json:"content"`
-		Status   int8   `json:"status"`
-		TaskDate string `json:"taskDate"`
-	}
-
 	var new_task db.Task
 	if err := c.BindJSON(&new_task); err != nil {
 		fmt.Println(err)
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "JSON formatted incorrectly"})
 		return
 	}
-
-	// task_date, err := time.Parse(time_layout, post_body.TaskDate)
-	// if err != nil {
-	// 	c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
-	// 	return
-	// }
-
 	new_task.DiscordID = db.SelectDiscordID(uid)
 	new_task.ID = db.InsertTask(new_task)
 	c.IndentedJSON(http.StatusCreated, new_task)
 }
 
 func UpdateTask(c *gin.Context) {
-	uid, taskid := c.Query("uid"), c.Query("task_id")
+	uid, taskid := c.Query("uid"), c.Query("taskID")
 	content := c.Query("content")
-	time_str := c.Query("task_date")
+	time_str := c.Query("taskDate")
 	task_date, err := time.Parse(time_layout, time_str)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
@@ -86,7 +71,7 @@ func UpdateTask(c *gin.Context) {
 }
 
 func DeleteTask(c *gin.Context) {
-	uid, taskid := c.Query("uid"), c.Query("task_id")
+	uid, taskid := c.Query("uid"), c.Query("taskID")
 	task := db.SelectUserTaskByID(uid, taskid)
 	if !db.DeleteTask(uid, taskid) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + taskid + " not found"})
