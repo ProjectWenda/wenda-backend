@@ -26,10 +26,6 @@ func GetAuth(c *gin.Context) {
 	client_id, client_secret := os.Getenv("CLIENT_ID"), os.Getenv("CLIENT_SECRET")
 	code := c.Query("code")
 
-	fmt.Println("Code is", code)
-	fmt.Println("Client ID is", client_id)
-	fmt.Println("Client secret is", client_secret)
-
 	// URL encode params to pass into token auth
 	data := url.Values{
 		"client_id":     {client_id},
@@ -38,7 +34,6 @@ func GetAuth(c *gin.Context) {
 		"code":          {code},
 		"redirect_uri":  {REDIRECT_URI},
 	}
-	fmt.Println(data.Encode())
 
 	// Post to token auth
 	resp, err := http.PostForm(API_ENDPOINT, data)

@@ -16,8 +16,6 @@ func DB() {
 		os.Getenv("AWS_DBUSER"), os.Getenv("AWS_DBPW"),
 		os.Getenv("AWS_DBNAME"),
 	)
-	fmt.Println(dsn)
-
 	var err error
 	db, err = sql.Open("postgres", dsn)
 	if err != nil {
@@ -90,13 +88,11 @@ func SelectDiscordID(uid string) string {
 		panic(err)
 	}
 
-	fmt.Println(discord_id)
 	return discord_id
 }
 
 func InsertUser(user User) {
 	query := fmt.Sprintf("INSERT INTO users (uid, token, discord_id, discord_name) VALUES ('%s', '%s', '%s', '%s')", user.UID, user.Token, user.DiscordID, user.DiscordName)
-	fmt.Println(query)
 	_, err := db.Exec(query)
 	if err != nil {
 		panic(err)
@@ -105,7 +101,6 @@ func InsertUser(user User) {
 
 func InsertTask(task Task) int8 {
 	query := fmt.Sprintf("INSERT INTO tasks (discord_id, content, status) VALUES ('%s', '%s', '%d') RETURNING id", task.DiscordID, task.Content, task.Status)
-	fmt.Println(query)
 	var id int8
 	err := db.QueryRow(query).Scan(&id)
 	if err != nil {

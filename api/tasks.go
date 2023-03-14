@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -42,7 +41,6 @@ func UpdateTask(c *gin.Context) {
 	uid, taskid := c.Query("uid"), c.Query("task_id")
 	content := c.Query("content")
 	status, err := strconv.Atoi(c.Query("status"))
-	fmt.Println("STATUS", status, err)
 	// verify status is valid
 	if err != nil || (status != 0 && status != 1 && status != 2) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "status should be 0, 1, or 2"})
