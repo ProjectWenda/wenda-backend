@@ -1,6 +1,7 @@
 package api
 
 import (
+	"app/wenda/db"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -46,7 +47,7 @@ func DiscordAuthData(token string) (string, string) {
 
 func GetDiscordUser(c *gin.Context) {
 	uid := c.Query("uid")
-	token := User_id_token[uid]
+	token := db.SelectDiscordToken(uid)
 
 	req, err := http.NewRequest("GET", DISCORD_BASE+"/users/@me", nil)
 	if err != nil {

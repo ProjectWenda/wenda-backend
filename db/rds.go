@@ -21,6 +21,7 @@ func InitDB() {
 		os.Getenv("AWS_DBUSER"), os.Getenv("AWS_DBPW"),
 		os.Getenv("AWS_DBNAME"),
 	)
+	fmt.Println(dsn)
 	var err error
 	DB, err = sql.Open("postgres", dsn)
 	if err != nil {
@@ -95,10 +96,19 @@ func SelectDiscordID(uid string) string {
 	var discord_id string
 	err := DB.QueryRow(query).Scan(&discord_id)
 	if err != nil {
+		return ""
+	}
+	return discord_id
+}
+
+func SelectDiscordToken(uid string) string {
+	query := fmt.Sprintf("SELECT token FROM users WHERE uid='%s'", uid)
+	var token string
+	err := DB.QueryRow(query).Scan(&token)
+	if err != nil {
 		panic(err)
 	}
-
-	return discord_id
+	return token
 }
 
 func InsertUser(user User) {

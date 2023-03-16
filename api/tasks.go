@@ -30,6 +30,7 @@ func GetTaskByID(c *gin.Context) {
 	user_task := db.SelectUserTaskByID(uid, taskid)
 	if (user_task == db.Task{}) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + taskid + " not found"})
+		return
 	}
 	c.IndentedJSON(http.StatusOK, user_task)
 }
