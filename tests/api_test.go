@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/joho/godotenv"
@@ -13,8 +14,9 @@ import (
 	jsonpath "github.com/steinfletcher/apitest-jsonpath"
 )
 
-const UID = "$2a$10$2z9RNlHH.3bN6LK9ITuHBu7pLXQKwVMJ5KTanXy6i1UsJLO2nGNA2"
 const task_table = "temp_tasks"
+
+var UID string
 
 type PostBody struct {
 	Content  string `json:"content"`
@@ -34,6 +36,8 @@ func load_env() {
 	if err := godotenv.Load("../.env"); err != nil {
 		fmt.Println("Error loading .env file")
 	}
+	fmt.Println(os.Getenv("TEST_UID"))
+	UID = os.Getenv("TEST_UID")
 }
 
 func create_table() bool {
@@ -78,7 +82,7 @@ func TestPostTask(t *testing.T) {
 		JSON(body).
 		Expect(t).
 		Assert(jsonpath.Matches(`$.id`, "1")).
-		Assert(jsonpath.Equal(`$.discordID`, "490574905985728523")).
+		Assert(jsonpath.Equal(`$.discordID`, "150708634370703360")).
 		Assert(jsonpath.Matches(`$.status`, "1")).
 		Assert(jsonpath.Equal(`$.content`, "test task")).
 		Assert(jsonpath.Equal(`$.taskDate`, "2023-06-20T03:00:00Z")).
@@ -197,5 +201,18 @@ func TestDeleteTask(t *testing.T) {
 		Query("taskID", fmt.Sprint(1)).
 		Expect(t).
 		Status(http.StatusNotFound).
+		End()
+}
+
+func TestUser(t *testing.T) {
+	init_test()
+	apitest.New().
+		Handler(handler.Router()).
+		Get("/user").
+		Query("uid", UID).
+		Expect(t).
+		Assert(jsonpath.Matches(`$.username`, "Impact")).
+		Assert(jsonpath.Matches(`$.id`, "150708634370703360")).
+		Status(http.StatusOK).
 		End()
 }
