@@ -3,11 +3,9 @@ package main
 import (
 	"fmt"
 
-	"app/wenda/api"
 	"app/wenda/db"
+	"app/wenda/handler"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -17,38 +15,26 @@ func load_env() {
 	}
 }
 
-func bind_task_crud(router *gin.Engine) {
-	router.GET("/tasks", api.GetTasks)
-	router.GET("/task", api.GetTaskByID)
-	router.POST("/task", api.PostTask)
-	router.PUT("/task", api.UpdateTask)
-	router.DELETE("/task", api.DeleteTask)
-}
+// var ginLambda *ginadapter.GinLambda
 
-func bind_discord(router *gin.Engine) {
-	router.GET("/user", api.GetDiscordUser)
-	router.GET("/friends", api.GetDiscordFriends)
-}
+// func init() {
+// 	// Load ENV
+// 	db.InitDB()
+// 	router := handler.Router()
+// 	// Run
+// 	//router.Run("localhost:8080")
+// 	ginLambda = ginadapter.New(router)
+// }
 
-func set_cors(router *gin.Engine) {
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173", "http://localhost:8080"}
-	router.Use(cors.New(config))
-}
+// func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+// 	// If no name is provided in the HTTP request body, throw an error
+// 	return ginLambda.ProxyWithContext(ctx, req)
+// }
 
 func main() {
-	// Load ENV
+	//lambda.Start(Handler)
 	load_env()
-	// Initialize DB
-	db.DB()
-	// Create router
-	router := gin.Default()
-	// CORS config
-	set_cors(router)
-	// Endpoints
-	bind_task_crud(router)
-	bind_discord(router)
-	router.GET("/auth", api.GetAuth)
-	// Run
-	router.Run("localhost:8080")
+	db.InitDB()
+	router := handler.Router()
+	router.Run()
 }

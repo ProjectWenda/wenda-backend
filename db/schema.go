@@ -13,16 +13,16 @@ const (
 type User struct {
 	UID         string `json:"uid"`
 	Token       string `json:"token"`
-	DiscordID   string `json:"discord_id"`
-	DiscordName string `json:"discord_name"`
+	DiscordID   string `json:"discordID"`
+	DiscordName string `json:"discordName"`
 }
 
 type Task struct {
 	ID           int8      `json:"id"`
-	DiscordID    string    `json:"uid"`
-	TimeCreated  time.Time `json:"time_created"`
-	LastModified time.Time `json:"last_modified"`
+	DiscordID    string    `json:"discordID"`
+	TimeCreated  time.Time `json:"timeCreated"`
+	LastModified time.Time `json:"lastModified"`
 	Content      string    `json:"content"`
 	Status       int8      `json:"status"`
-	TaskDate     time.Time `json:"task_date"`
+	TaskDate     time.Time `json:"taskDate"`
 }

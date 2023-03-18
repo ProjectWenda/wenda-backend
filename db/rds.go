@@ -9,29 +9,38 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var db *sql.DB
+var DB *sql.DB
 
-func DB() {
+var TaskTable string = "tasks"
+
+const time_layout = "2006-01-02T15:04:05Z"
+
+func InitDB() {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
 		os.Getenv("AWS_HOST"), 5432,
 		os.Getenv("AWS_DBUSER"), os.Getenv("AWS_DBPW"),
 		os.Getenv("AWS_DBNAME"),
 	)
+	fmt.Println(dsn)
 	var err error
-	db, err = sql.Open("postgres", dsn)
+	DB, err = sql.Open("postgres", dsn)
 	if err != nil {
+		fmt.Println("Failed to open postgres server")
 		panic(err)
 	}
 
-	err = db.Ping()
+	err = DB.Ping()
 	if err != nil {
+		fmt.Println("Failed to connect to postgres server")
 		panic(err)
 	}
 
 }
 
 func SelectAllTasks() []Task {
-	rows, err := db.Query("SELECT * FROM tasks")
+	query := fmt.Sprintf("SELECT * FROM %s", TaskTable)
+	rows, err := DB.Query(query)
+
 	if err != nil {
 		panic(err)
 	}
@@ -51,12 +60,13 @@ func SelectAllTasks() []Task {
 
 func SelectUserTasks(uid string) []Task {
 	discord_id := SelectDiscordID(uid)
-	query := fmt.Sprintf("SELECT * FROM tasks WHERE discord_id='%s'", discord_id)
-	rows, err := db.Query(query)
+	query := fmt.Sprintf("SELECT * FROM %s WHERE discord_id='%s'", TaskTable, discord_id)
+	fmt.Println(query)
+	rows, err := DB.Query(query)
 	if err != nil {
-		panic(err)
+		fmt.Println("Empty")
+		return []Task{}
 	}
-	defer rows.Close()
 
 	var tasks []Task
 	for rows.Next() {
@@ -72,9 +82,9 @@ func SelectUserTasks(uid string) []Task {
 
 func SelectUserTaskByID(uid string, task_id string) Task {
 	discord_id := SelectDiscordID(uid)
-	query := fmt.Sprintf("SELECT * FROM tasks WHERE discord_id='%s' AND id='%s'", discord_id, task_id)
+	query := fmt.Sprintf("SELECT * FROM %s WHERE discord_id='%s' AND id='%s'", TaskTable, discord_id, task_id)
 	var task Task
-	err := db.QueryRow(query).Scan(&task.ID, &task.DiscordID, &task.TimeCreated, &task.LastModified, &task.Content, &task.Status, &task.TaskDate)
+	err := DB.QueryRow(query).Scan(&task.ID, &task.DiscordID, &task.TimeCreated, &task.LastModified, &task.Content, &task.Status, &task.TaskDate)
 	if err != nil {
 		return Task{}
 	}
@@ -84,29 +94,39 @@ func SelectUserTaskByID(uid string, task_id string) Task {
 func SelectDiscordID(uid string) string {
 	query := fmt.Sprintf("SELECT discord_id FROM users WHERE uid='%s'", uid)
 	var discord_id string
-	err := db.QueryRow(query).Scan(&discord_id)
+	err := DB.QueryRow(query).Scan(&discord_id)
+	if err != nil {
+		return ""
+	}
+	return discord_id
+}
+
+func SelectDiscordToken(uid string) string {
+	query := fmt.Sprintf("SELECT token FROM users WHERE uid='%s'", uid)
+	var token string
+	err := DB.QueryRow(query).Scan(&token)
 	if err != nil {
 		panic(err)
 	}
-
-	return discord_id
+	return token
 }
 
 func InsertUser(user User) {
 	query := fmt.Sprintf("INSERT INTO users (uid, token, discord_id, discord_name) VALUES ('%s', '%s', '%s', '%s')", user.UID, user.Token, user.DiscordID, user.DiscordName)
-	_, err := db.Exec(query)
+	_, err := DB.Exec(query)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func InsertTask(task Task) int8 {
+	fmt.Println(task.TaskDate.Format(time_layout))
 	query := fmt.Sprintf(
-		"INSERT INTO tasks (discord_id, content, status, task_date) VALUES ('%s', '%s', '%d', '%s') RETURNING id",
-		task.DiscordID, task.Content, task.Status, task.TaskDate,
+		"INSERT INTO %s (discord_id, content, status, task_date) VALUES ('%s', '%s', '%d', '%s') RETURNING id",
+		TaskTable, task.DiscordID, task.Content, task.Status, task.TaskDate.Format(time_layout),
 	)
 	var id int8
-	err := db.QueryRow(query).Scan(&id)
+	err := DB.QueryRow(query).Scan(&id)
 	if err != nil {
 		panic(err)
 	}
@@ -116,16 +136,16 @@ func InsertTask(task Task) int8 {
 func UpdateTask(uid string, task_id string, content string, status int, task_date time.Time) bool {
 	discord_id := SelectDiscordID(uid)
 	query := fmt.Sprintf(
-		"UPDATE tasks SET content='%s',status='%d',task_date='%s' WHERE discord_id='%s' AND id='%s'",
-		content, status, task_date, discord_id, task_id,
+		"UPDATE %s SET content='%s',status='%d',task_date='%s' WHERE discord_id='%s' AND id='%s'",
+		TaskTable, content, status, task_date.Format(time_layout), discord_id, task_id,
 	)
-	_, err := db.Exec(query)
+	_, err := DB.Exec(query)
 	return err == nil
 }
 
 func DeleteTask(uid string, task_id string) bool {
 	discord_id := SelectDiscordID(uid)
-	query := fmt.Sprintf("DELETE FROM tasks WHERE discord_id='%s' AND id='%s'", discord_id, task_id)
-	_, err := db.Exec(query)
+	query := fmt.Sprintf("DELETE FROM %s WHERE discord_id='%s' AND id='%s'", TaskTable, discord_id, task_id)
+	_, err := DB.Exec(query)
 	return err == nil
 }
