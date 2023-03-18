@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/aws/aws-lambda-go v1.38.0
+	github.com/aws/aws-sdk-go v1.44.224
 	github.com/awslabs/aws-lambda-go-api-proxy v0.14.0
 	github.com/gin-gonic/gin v1.9.0
 	github.com/joho/godotenv v1.5.1
@@ -15,6 +16,7 @@ require (
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/nedpals/postgrest-go v0.1.3 // indirect
 )
 
