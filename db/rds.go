@@ -133,7 +133,7 @@ func InsertTask(task Task) int8 {
 	return int8(id)
 }
 
-func UpdateTask(uid string, task_id string, content string, status int, task_date time.Time) bool {
+func PutTask(uid string, task_id string, content string, status int, task_date time.Time) bool {
 	discord_id := SelectDiscordID(uid)
 	query := fmt.Sprintf(
 		"UPDATE %s SET content='%s',status='%d',task_date='%s' WHERE discord_id='%s' AND id='%s'",

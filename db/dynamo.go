@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -207,4 +208,51 @@ func AddTask(task Task) error {
 	}
 	fmt.Println("Successfully added " + task.Content + " to table " + table_name)
 	return nil
+}
+
+func UpdateTask(uid string, task_id string, content string, status int, task_date time.Time) error {
+	discord_id, err := GetDiscordID(uid)
+	if err != nil {
+		log.Fatalf("Failed to get discord id for %s", uid)
+		return errors.New("failed to get discord ID")
+	}
+	table_name := "tasks"
+	input := &dynamodb.UpdateItemInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":content": {
+				S: aws.String(content),
+			},
+			":status": {
+				N: aws.String(fmt.Sprint(status)),
+			},
+			":date": {
+				S: aws.String(task_date.String()),
+			},
+			":modified": {
+				S: aws.String(time.Now().String()),
+			},
+			":id": {
+				S: aws.String(discord_id),
+			},
+		},
+		TableName: aws.String(table_name),
+		Key: map[string]*dynamodb.AttributeValue{
+			"taskID": {
+				S: aws.String(task_id),
+			},
+		},
+		ConditionExpression: aws.String("discordID = :id"),
+		ReturnValues:        aws.String("UPDATED_NEW"),
+		UpdateExpression:    aws.String("set content = :content, taskStatus = :status, taskDate = :date, lastModified = :modified"),
+	}
+
+	_, err = svc.UpdateItem(input)
+	if err != nil {
+		log.Fatalf("Got error calling UpdateItem: %s", err)
+		return err
+	}
+
+	fmt.Println("Successfully updated task " + task_id)
+	return nil
+
 }

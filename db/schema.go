@@ -23,6 +23,6 @@ type Task struct {
 	TimeCreated  time.Time `json:"timeCreated"`
 	LastModified time.Time `json:"lastModified"`
 	Content      string    `json:"content"`
-	Status       int8      `json:"status"`
+	Status       int8      `json:"taskStatus"`
 	TaskDate     time.Time `json:"taskDate"`
 }
