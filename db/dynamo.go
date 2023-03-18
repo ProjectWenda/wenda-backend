@@ -254,5 +254,36 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 
 	fmt.Println("Successfully updated task " + task_id)
 	return nil
+}
 
+func DeleteTask(uid string, task_id string) error {
+	discord_id, err := GetDiscordID(uid)
+	if err != nil {
+		log.Fatalf("Failed to get discord id for %s", uid)
+		return errors.New("failed to get discord ID")
+	}
+	table_name := "tasks"
+	input := &dynamodb.DeleteItemInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":id": {
+				S: aws.String(discord_id),
+			},
+		},
+		Key: map[string]*dynamodb.AttributeValue{
+			"taskID": {
+				S: aws.String(task_id),
+			},
+		},
+		ConditionExpression: aws.String("discordID = :id"),
+		TableName:           aws.String(table_name),
+	}
+
+	_, err = svc.DeleteItem(input)
+	if err != nil {
+		log.Fatalf("Got error calling DeleteItem: %s", err)
+		return err
+	}
+
+	fmt.Println("Deleted " + task_id)
+	return nil
 }

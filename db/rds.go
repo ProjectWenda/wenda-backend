@@ -143,7 +143,7 @@ func PutTask(uid string, task_id string, content string, status int, task_date t
 	return err == nil
 }
 
-func DeleteTask(uid string, task_id string) bool {
+func _DeleteTask(uid string, task_id string) bool {
 	discord_id := SelectDiscordID(uid)
 	query := fmt.Sprintf("DELETE FROM %s WHERE discord_id='%s' AND id='%s'", TaskTable, discord_id, task_id)
 	_, err := DB.Exec(query)
