@@ -13,6 +13,10 @@ import (
 )
 
 var svc *dynamodb.DynamoDB
+var (
+	user_proj expression.ProjectionBuilder
+	task_proj expression.ProjectionBuilder
+)
 
 func init() {
 	// Initialize DB connection
@@ -22,16 +26,18 @@ func init() {
 
 	// Create DynamoDB client
 	svc = dynamodb.New(sess)
+
+	// User and task cols
+	user_proj = expression.NamesList(expression.Name("uid"), expression.Name("discordID"), expression.Name("discordName"), expression.Name("token"))
+	task_proj = expression.NamesList(
+		expression.Name("taskID"), expression.Name("content"), expression.Name("discordID"), expression.Name("lastModified"), expression.Name("status"), expression.Name("taskDate"), expression.Name("timeCreated"),
+	)
 }
 
 // FILTERS
-func filter_users_by_uid(uid string) *dynamodb.ScanInput {
-	table_name := "users"
-	filt := expression.Name("uid").Equal(expression.Value(uid))
-
-	proj := expression.NamesList(expression.Name("uid"), expression.Name("discordID"), expression.Name("discordName"), expression.Name("token"))
-
+func form_params(filt expression.ConditionBuilder, proj expression.ProjectionBuilder, table_name string) *dynamodb.ScanInput {
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
+	// TODO: error catch here somehow
 	if err != nil {
 		log.Fatalf("Failed to build query %s", err)
 	}
@@ -43,32 +49,28 @@ func filter_users_by_uid(uid string) *dynamodb.ScanInput {
 		ProjectionExpression:      expr.Projection(),
 		TableName:                 aws.String(table_name),
 	}
-
 	return params
+}
+
+func filter_users_by_uid(uid string) *dynamodb.ScanInput {
+	table_name := "users"
+	filt := expression.Name("uid").Equal(expression.Value(uid))
+	return form_params(filt, user_proj, table_name)
 }
 
 func filter_tasks_by_discordID(discord_id string) *dynamodb.ScanInput {
 	table_name := "tasks"
 	filt := expression.Name("discordID").Equal(expression.Value(discord_id))
+	return form_params(filt, task_proj, table_name)
+}
 
-	proj := expression.NamesList(
-		expression.Name("taskID"), expression.Name("content"), expression.Name("discordID"), expression.Name("lastModified"), expression.Name("status"), expression.Name("taskDate"), expression.Name("timeCreated"),
+func filter_task_by_id(discord_id string, task_id string) *dynamodb.ScanInput {
+	table_name := "tasks"
+	filt := expression.And(
+		expression.Name("discordID").Equal(expression.Value(discord_id)),
+		expression.Name("taskID").Equal(expression.Value(task_id)),
 	)
-
-	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
-	if err != nil {
-		log.Fatalf("Failed to build query %s", err)
-	}
-
-	params := &dynamodb.ScanInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          expr.Filter(),
-		ProjectionExpression:      expr.Projection(),
-		TableName:                 aws.String(table_name),
-	}
-
-	return params
+	return form_params(filt, task_proj, table_name)
 }
 
 // QUERIES
@@ -118,4 +120,29 @@ func GetUserTasks(uid string) ([]Task, error) {
 	}
 
 	return tasks, nil
+}
+
+func GetUserTaskByID(uid string, task_id string) (Task, error) {
+	discord_id, err := GetDiscordID(uid)
+	if err != nil {
+		log.Fatalf("Failed to get discord id for %s", uid)
+		return Task{}, errors.New("failed to get discord ID")
+	}
+
+	params := filter_task_by_id(discord_id, task_id)
+
+	result, err := svc.Scan(params)
+	if err != nil {
+		log.Fatalf("Query API call failed: %s", err)
+		return Task{}, errors.New("query failed")
+	}
+
+	task := Task{}
+	if err := dynamodbattribute.UnmarshalMap(result.Items[0], &task); err != nil {
+		log.Fatalf("Failed to unmarshal user data")
+		return Task{}, errors.New("failed to unmarshal data")
+	}
+
+	fmt.Println(task.Content)
+	return task, nil
 }
