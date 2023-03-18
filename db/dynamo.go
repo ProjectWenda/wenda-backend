@@ -74,23 +74,40 @@ func filter_task_by_id(discord_id string, task_id string) *dynamodb.ScanInput {
 }
 
 // QUERIES
-func GetDiscordID(uid string) (string, error) {
+func GetUser(uid string) (User, error) {
 	params := filter_users_by_uid(uid)
 
 	result, err := svc.Scan(params)
 	if err != nil {
 		log.Fatalf("Query API call failed: %s", err)
-		return "", errors.New("query failed")
+		return User{}, errors.New("query failed")
 	}
 
 	user := User{}
 	if err := dynamodbattribute.UnmarshalMap(result.Items[0], &user); err != nil {
 		log.Fatalf("Failed to unmarshal user data")
-		return "", errors.New("failed to unmarshal")
+		return User{}, errors.New("failed to unmarshal")
 	}
 
-	fmt.Println("user", user)
+	return user, nil
+}
+
+func GetDiscordID(uid string) (string, error) {
+	user, err := GetUser(uid)
+	if err != nil {
+		log.Fatalf("Failed to get user %s", err)
+		return "", err
+	}
 	return user.DiscordID, nil
+}
+
+func GetUserToken(uid string) (string, error) {
+	user, err := GetUser(uid)
+	if err != nil {
+		log.Fatalf("Failed to get user %s", err)
+		return "", err
+	}
+	return user.Token, nil
 }
 
 func GetUserTasks(uid string) ([]Task, error) {
