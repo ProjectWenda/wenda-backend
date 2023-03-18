@@ -125,3 +125,77 @@ func TestGetTasks(t *testing.T) {
 			End()
 	}
 }
+
+func TestGetTask(t *testing.T) {
+	init_test()
+	// Post some data
+	var bodies []PostBody
+	bodies = append(bodies, create_task(t, "test task", 1, "2023-06-20T00:00:01Z"))
+	bodies = append(bodies, create_task(t, "random", 0, "2023-03-20T00:00:00Z"))
+	bodies = append(bodies, create_task(t, "aaa", 2, "2025-06-30T01:00:00Z"))
+
+	for i, body := range bodies {
+		apitest.New().
+			Handler(handler.Router()).
+			Get("/task").
+			Query("uid", UID).
+			Query("taskID", fmt.Sprint(i+1)).
+			Expect(t).
+			Assert(jsonpath.Matches(`$.content`, body.Content)).
+			Assert(jsonpath.Matches(`$.status`, fmt.Sprint(body.Status))).
+			Assert(jsonpath.Matches(`$.taskDate`, body.TaskDate)).
+			Status(http.StatusOK).
+			End()
+	}
+}
+
+func TestPutTask(t *testing.T) {
+	init_test()
+	create_task(t, "test task", 1, "2023-06-20T00:00:01Z")
+	edited_body := PostBody{
+		Content:  "new task",
+		Status:   0,
+		TaskDate: "2023-06-21T00:00:01Z",
+	}
+
+	apitest.New().
+		Handler(handler.Router()).
+		Put("/task").
+		Query("uid", UID).
+		Query("taskID", fmt.Sprint(1)).
+		Query("content", edited_body.Content).
+		Query("status", fmt.Sprint(edited_body.Status)).
+		Query("taskDate", edited_body.TaskDate).
+		Expect(t).
+		Assert(jsonpath.Matches(`$.content`, edited_body.Content)).
+		Assert(jsonpath.Matches(`$.status`, fmt.Sprint(edited_body.Status))).
+		Assert(jsonpath.Matches(`$.taskDate`, edited_body.TaskDate)).
+		Status(http.StatusOK).
+		End()
+}
+
+func TestDeleteTask(t *testing.T) {
+	init_test()
+	body := create_task(t, "test task", 1, "2023-06-20T00:00:01Z")
+
+	apitest.New().
+		Handler(handler.Router()).
+		Delete("/task").
+		Query("uid", UID).
+		Query("taskID", fmt.Sprint(1)).
+		Expect(t).
+		Assert(jsonpath.Matches(`$.content`, body.Content)).
+		Assert(jsonpath.Matches(`$.status`, fmt.Sprint(body.Status))).
+		Assert(jsonpath.Matches(`$.taskDate`, body.TaskDate)).
+		Status(http.StatusOK).
+		End()
+
+	apitest.New().
+		Handler(handler.Router()).
+		Get("/task").
+		Query("uid", UID).
+		Query("taskID", fmt.Sprint(1)).
+		Expect(t).
+		Status(http.StatusNotFound).
+		End()
+}

@@ -120,6 +120,7 @@ func InsertUser(user User) {
 }
 
 func InsertTask(task Task) int8 {
+	fmt.Println(task.TaskDate.Format(time_layout))
 	query := fmt.Sprintf(
 		"INSERT INTO %s (discord_id, content, status, task_date) VALUES ('%s', '%s', '%d', '%s') RETURNING id",
 		TaskTable, task.DiscordID, task.Content, task.Status, task.TaskDate.Format(time_layout),

@@ -10,7 +10,6 @@ import (
 )
 
 func load_env() {
-	fmt.Println("Entered loadenv")
 	if err := godotenv.Load(".env"); err != nil {
 		fmt.Println("Error loading .env file")
 	}
@@ -34,7 +33,6 @@ func load_env() {
 
 func main() {
 	//lambda.Start(Handler)
-	//fmt.Println("Hello")
 	load_env()
 	db.InitDB()
 	router := handler.Router()

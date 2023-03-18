@@ -54,17 +54,20 @@ func UpdateTask(c *gin.Context) {
 	time_str := c.Query("taskDate")
 	task_date, err := time.Parse(time_layout, time_str)
 	if err != nil {
+		fmt.Println("[PUT] incorrectly formatted time")
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
 		return
 	}
 	status, err := strconv.Atoi(c.Query("status"))
 	// verify status is valid
 	if err != nil || (status != 0 && status != 1 && status != 2) {
+		fmt.Println("[PUT] incorrectly formatted status")
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "status should be 0, 1, or 2"})
 		return
 	}
 
 	if !db.UpdateTask(uid, taskid, content, status, task_date) {
+		fmt.Println("[PUT] cant find task id")
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + taskid + " not found"})
 		return
 	}
