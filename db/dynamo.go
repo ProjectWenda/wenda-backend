@@ -74,6 +74,26 @@ func filter_task_by_id(discord_id string, task_id string) *dynamodb.ScanInput {
 }
 
 // QUERIES
+func add_object(in interface{}, table_name string) error {
+	av, err := dynamodbattribute.MarshalMap(in)
+	if err != nil {
+		log.Fatalf("Failed to marshal task %s", err)
+		return err
+	}
+
+	input := &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String(table_name),
+	}
+
+	_, err = svc.PutItem(input)
+	if err != nil {
+		log.Fatalf("Got error calling PutItem: %s\n", err)
+		return err
+	}
+
+	return nil
+}
 
 // USERS
 func GetUser(uid string) (User, error) {
@@ -113,24 +133,12 @@ func GetUserToken(uid string) (string, error) {
 }
 
 func AddUser(user User) error {
-	av, err := dynamodbattribute.MarshalMap(user)
-	if err != nil {
-		log.Fatalf("Failed to marshal task %s", err)
-		return err
-	}
 	table_name := "users"
-
-	input := &dynamodb.PutItemInput{
-		Item:      av,
-		TableName: aws.String(table_name),
-	}
-
-	_, err = svc.PutItem(input)
+	err := add_object(user, table_name)
 	if err != nil {
-		log.Fatalf("Got error calling PutItem: %s\n", err)
+		log.Fatalf("failed to add user %s", err)
 		return err
 	}
-
 	fmt.Println("Successfully added " + user.DiscordName + " to table " + table_name)
 	return nil
 }
@@ -188,4 +196,15 @@ func GetUserTaskByID(uid string, task_id string) (Task, error) {
 
 	fmt.Println(task.Content)
 	return task, nil
+}
+
+func AddTask(task Task) error {
+	table_name := "tasks"
+	err := add_object(task, table_name)
+	if err != nil {
+		log.Fatalf("Failed to add task %s", err)
+		return err
+	}
+	fmt.Println("Successfully added " + task.Content + " to table " + table_name)
+	return nil
 }
