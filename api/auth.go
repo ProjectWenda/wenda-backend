@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -59,7 +60,10 @@ func GetAuth(c *gin.Context) {
 		DiscordName: discord_name,
 	}
 
-	db.InsertUser(new_user)
+	err = db.AddUser(new_user)
+	if err != nil {
+		log.Fatalf("Faile dto add user to db %s", err)
+	}
 
 	// Map hash -> token
 	User_id_token[authuid] = res["access_token"].(string) // type to string

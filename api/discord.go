@@ -47,7 +47,11 @@ func DiscordAuthData(token string) (string, string) {
 
 func GetDiscordUser(c *gin.Context) {
 	uid := c.Query("uid")
-	token := db.SelectDiscordToken(uid)
+	token, err := db.GetUserToken(uid)
+	if err != nil {
+		c.IndentedJSON(http.StatusExpectationFailed, gin.H{"message": "failed to retrieve user token"})
+		return
+	}
 
 	req, err := http.NewRequest("GET", DISCORD_BASE+"/users/@me", nil)
 	if err != nil {

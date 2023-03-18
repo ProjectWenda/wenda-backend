@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
-
-	"app/wenda/db"
 	"app/wenda/handler"
+	"fmt"
 
 	"github.com/joho/godotenv"
 )
@@ -34,7 +32,6 @@ func load_env() {
 func main() {
 	//lambda.Start(Handler)
 	load_env()
-	db.InitDB()
 	router := handler.Router()
 	router.Run()
 }
