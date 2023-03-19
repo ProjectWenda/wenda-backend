@@ -165,7 +165,7 @@ func GetUserTasks(uid string) ([]Task, error) {
 	for _, i := range result.Items {
 		task := Task{}
 		if err := dynamodbattribute.UnmarshalMap(i, &task); err != nil {
-			log.Printf("Failed to unmarshal user data")
+			log.Printf("Failed to unmarshal user task %s", i)
 			return []Task{}, errors.New("failed to unmarshal data")
 		}
 		tasks = append(tasks, task)
@@ -217,6 +217,7 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 		return errors.New("failed to get discord ID")
 	}
 	table_name := "tasks"
+
 	input := &dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":content": {
@@ -263,6 +264,7 @@ func DeleteTask(uid string, task_id string) error {
 		return errors.New("failed to get discord ID")
 	}
 	table_name := "tasks"
+
 	input := &dynamodb.DeleteItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":id": {

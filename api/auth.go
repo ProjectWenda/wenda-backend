@@ -31,10 +31,11 @@ func GetAuth(c *gin.Context) {
 		"client_secret": {client_secret},
 		"grant_type":    {"authorization_code"},
 		"code":          {code},
-		"redirect_uri":  {os.Getenv("REDIRECT_URL")},
+		"redirect_uri":  {os.Getenv("FRONTEND_URL")},
 	}
 
 	// Post to token auth
+	fmt.Println(data)
 	resp, err := http.PostForm(API_ENDPOINT, data)
 	if err != nil {
 		fmt.Println("Issue posting to discord auth api")
@@ -44,6 +45,7 @@ func GetAuth(c *gin.Context) {
 	// Parse token into res
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
+	fmt.Println(res)
 
 	token := res["access_token"].(string)
 	// Hash the token
@@ -63,18 +65,6 @@ func GetAuth(c *gin.Context) {
 		log.Printf("Failed to add user to db %s", err)
 	}
 
-	// Map hash -> token
-	User_id_token[authuid] = res["access_token"].(string) // type to string
-
-	// Set cookie for redirect
-	authid_cookie := http.Cookie{
-		Name:   "authuid",
-		Value:  authuid,
-		MaxAge: 604800, //1 week
-		Secure: true,
-	}
-	http.SetCookie(c.Writer, &authid_cookie)
-
 	// Redirect back to frontend
-	c.Redirect(http.StatusMovedPermanently, os.Getenv("FRONTEND_URL"))
+	c.IndentedJSON(http.StatusOK, gin.H{"authuid": authuid})
 }
