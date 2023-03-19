@@ -15,8 +15,6 @@ import (
 )
 
 var API_ENDPOINT string = "https://discord.com/api/v10/oauth2/token"
-var REDIRECT_URI string = "http://localhost:8080/auth"
-var FRONTEND_URI string = "http://localhost:5173"
 
 // Initialize an empty map, eventually we want to be storing this in the DB
 // Maps state -> auth token
@@ -33,7 +31,7 @@ func GetAuth(c *gin.Context) {
 		"client_secret": {client_secret},
 		"grant_type":    {"authorization_code"},
 		"code":          {code},
-		"redirect_uri":  {REDIRECT_URI},
+		"redirect_uri":  {os.Getenv("REDIRECT_URL")},
 	}
 
 	// Post to token auth
@@ -62,7 +60,7 @@ func GetAuth(c *gin.Context) {
 
 	err = db.AddUser(new_user)
 	if err != nil {
-		log.Fatalf("Faile dto add user to db %s", err)
+		log.Printf("Failed to add user to db %s", err)
 	}
 
 	// Map hash -> token
@@ -78,5 +76,5 @@ func GetAuth(c *gin.Context) {
 	http.SetCookie(c.Writer, &authid_cookie)
 
 	// Redirect back to frontend
-	c.Redirect(http.StatusMovedPermanently, FRONTEND_URI)
+	c.Redirect(http.StatusMovedPermanently, os.Getenv("FRONTEND_URL"))
 }

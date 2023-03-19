@@ -40,7 +40,7 @@ func form_params(filt expression.ConditionBuilder, proj expression.ProjectionBui
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	// TODO: error catch here somehow
 	if err != nil {
-		log.Fatalf("Failed to build query %s", err)
+		log.Printf("Failed to build query %s", err)
 	}
 
 	params := &dynamodb.ScanInput{
@@ -78,7 +78,7 @@ func filter_task_by_id(discord_id string, task_id string) *dynamodb.ScanInput {
 func add_object(in interface{}, table_name string) error {
 	av, err := dynamodbattribute.MarshalMap(in)
 	if err != nil {
-		log.Fatalf("Failed to marshal task %s", err)
+		log.Printf("Failed to marshal task %s", err)
 		return err
 	}
 
@@ -89,7 +89,7 @@ func add_object(in interface{}, table_name string) error {
 
 	_, err = svc.PutItem(input)
 	if err != nil {
-		log.Fatalf("Got error calling PutItem: %s\n", err)
+		log.Printf("Got error calling PutItem: %s\n", err)
 		return err
 	}
 
@@ -102,13 +102,13 @@ func GetUser(uid string) (User, error) {
 
 	result, err := svc.Scan(params)
 	if err != nil {
-		log.Fatalf("Query API call failed: %s", err)
+		log.Printf("Query API call failed: %s", err)
 		return User{}, errors.New("query failed")
 	}
 
 	user := User{}
 	if err := dynamodbattribute.UnmarshalMap(result.Items[0], &user); err != nil {
-		log.Fatalf("Failed to unmarshal user data")
+		log.Printf("Failed to unmarshal user data")
 		return User{}, errors.New("failed to unmarshal")
 	}
 
@@ -118,7 +118,7 @@ func GetUser(uid string) (User, error) {
 func GetDiscordID(uid string) (string, error) {
 	user, err := GetUser(uid)
 	if err != nil {
-		log.Fatalf("Failed to get user %s", err)
+		log.Printf("Failed to get user %s", err)
 		return "", err
 	}
 	return user.DiscordID, nil
@@ -127,7 +127,7 @@ func GetDiscordID(uid string) (string, error) {
 func GetUserToken(uid string) (string, error) {
 	user, err := GetUser(uid)
 	if err != nil {
-		log.Fatalf("Failed to get user %s", err)
+		log.Printf("Failed to get user %s", err)
 		return "", err
 	}
 	return user.Token, nil
@@ -137,7 +137,7 @@ func AddUser(user User) error {
 	table_name := "users"
 	err := add_object(user, table_name)
 	if err != nil {
-		log.Fatalf("failed to add user %s", err)
+		log.Printf("failed to add user %s", err)
 		return err
 	}
 	fmt.Println("Successfully added " + user.DiscordName + " to table " + table_name)
@@ -148,7 +148,7 @@ func AddUser(user User) error {
 func GetUserTasks(uid string) ([]Task, error) {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
-		log.Fatalf("Failed to get discord id for %s", uid)
+		log.Printf("Failed to get discord id for %s", uid)
 		return []Task{}, errors.New("failed to get discord ID")
 	}
 
@@ -156,7 +156,7 @@ func GetUserTasks(uid string) ([]Task, error) {
 
 	result, err := svc.Scan(params)
 	if err != nil {
-		log.Fatalf("Query API call failed: %s", err)
+		log.Printf("Query API call failed: %s", err)
 		return []Task{}, errors.New("query failed")
 	}
 
@@ -165,7 +165,7 @@ func GetUserTasks(uid string) ([]Task, error) {
 	for _, i := range result.Items {
 		task := Task{}
 		if err := dynamodbattribute.UnmarshalMap(i, &task); err != nil {
-			log.Fatalf("Failed to unmarshal user data")
+			log.Printf("Failed to unmarshal user data")
 			return []Task{}, errors.New("failed to unmarshal data")
 		}
 		tasks = append(tasks, task)
@@ -177,7 +177,7 @@ func GetUserTasks(uid string) ([]Task, error) {
 func GetUserTaskByID(uid string, task_id string) (Task, error) {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
-		log.Fatalf("Failed to get discord id for %s", uid)
+		log.Printf("Failed to get discord id for %s", uid)
 		return Task{}, errors.New("failed to get discord ID")
 	}
 
@@ -185,13 +185,13 @@ func GetUserTaskByID(uid string, task_id string) (Task, error) {
 
 	result, err := svc.Scan(params)
 	if err != nil {
-		log.Fatalf("Query API call failed: %s", err)
+		log.Printf("Query API call failed: %s", err)
 		return Task{}, errors.New("query failed")
 	}
 
 	task := Task{}
 	if err := dynamodbattribute.UnmarshalMap(result.Items[0], &task); err != nil {
-		log.Fatalf("Failed to unmarshal user data")
+		log.Printf("Failed to unmarshal user data")
 		return Task{}, errors.New("failed to unmarshal data")
 	}
 
@@ -203,7 +203,7 @@ func AddTask(task Task) error {
 	table_name := "tasks"
 	err := add_object(task, table_name)
 	if err != nil {
-		log.Fatalf("Failed to add task %s", err)
+		log.Printf("Failed to add task %s", err)
 		return err
 	}
 	fmt.Println("Successfully added " + task.Content + " to table " + table_name)
@@ -213,7 +213,7 @@ func AddTask(task Task) error {
 func UpdateTask(uid string, task_id string, content string, status int, task_date time.Time) error {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
-		log.Fatalf("Failed to get discord id for %s", uid)
+		log.Printf("Failed to get discord id for %s", uid)
 		return errors.New("failed to get discord ID")
 	}
 	table_name := "tasks"
@@ -248,7 +248,7 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 
 	_, err = svc.UpdateItem(input)
 	if err != nil {
-		log.Fatalf("Got error calling UpdateItem: %s", err)
+		log.Printf("Got error calling UpdateItem: %s", err)
 		return err
 	}
 
@@ -259,7 +259,7 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 func DeleteTask(uid string, task_id string) error {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
-		log.Fatalf("Failed to get discord id for %s", uid)
+		log.Printf("Failed to get discord id for %s", uid)
 		return errors.New("failed to get discord ID")
 	}
 	table_name := "tasks"
@@ -280,7 +280,7 @@ func DeleteTask(uid string, task_id string) error {
 
 	_, err = svc.DeleteItem(input)
 	if err != nil {
-		log.Fatalf("Got error calling DeleteItem: %s", err)
+		log.Printf("Got error calling DeleteItem: %s", err)
 		return err
 	}
 

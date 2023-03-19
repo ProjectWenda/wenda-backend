@@ -17,7 +17,6 @@ func load_env() {
 
 // func init() {
 // 	// Load ENV
-// 	db.InitDB()
 // 	router := handler.Router()
 // 	// Run
 // 	//router.Run("localhost:8080")
@@ -30,7 +29,7 @@ func load_env() {
 // }
 
 func main() {
-	//lambda.Start(Handler)
+	// lambda.Start(Handler)
 	load_env()
 	router := handler.Router()
 	router.Run()
