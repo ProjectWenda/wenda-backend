@@ -26,3 +26,13 @@ type Task struct {
 	Status       int8      `json:"taskStatus"`
 	TaskDate     time.Time `json:"taskDate"`
 }
+
+type DBTask struct {
+	ID           string `json:"taskID"`
+	DiscordID    string `json:"discordID"`
+	TimeCreated  string `json:"timeCreated"`
+	LastModified string `json:"lastModified"`
+	Content      string `json:"content"`
+	Status       int8   `json:"taskStatus"`
+	TaskDate     string `json:"taskDate"`
+}

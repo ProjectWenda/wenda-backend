@@ -19,6 +19,8 @@ var (
 	task_proj expression.ProjectionBuilder
 )
 
+const time_layout = "2006-01-02T15:04:05Z"
+
 func init() {
 	// Initialize DB connection
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
@@ -201,7 +203,16 @@ func GetUserTaskByID(uid string, task_id string) (Task, error) {
 
 func AddTask(task Task) error {
 	table_name := "tasks"
-	err := add_object(task, table_name)
+	formatted_task := DBTask{
+		ID:           task.ID,
+		DiscordID:    task.DiscordID,
+		TimeCreated:  task.TimeCreated.Format(time_layout),
+		LastModified: task.LastModified.Format(time_layout),
+		Content:      task.Content,
+		Status:       task.Status,
+		TaskDate:     task.TaskDate.Format(time_layout),
+	}
+	err := add_object(formatted_task, table_name)
 	if err != nil {
 		log.Printf("Failed to add task %s", err)
 		return err
@@ -227,10 +238,10 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 				N: aws.String(fmt.Sprint(status)),
 			},
 			":date": {
-				S: aws.String(task_date.String()),
+				S: aws.String(task_date.Format(time_layout)),
 			},
 			":modified": {
-				S: aws.String(time.Now().String()),
+				S: aws.String(time.Now().Format(time_layout)),
 			},
 			":id": {
 				S: aws.String(discord_id),
