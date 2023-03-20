@@ -78,7 +78,7 @@ func UpdateTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
 		return
 	}
-	status, err := strconv.Atoi(c.Query("status"))
+	status, err := strconv.Atoi(c.Query("taskStatus"))
 	// verify status is valid
 	if err != nil || (status != 0 && status != 1 && status != 2) {
 		fmt.Println("[PUT] incorrectly formatted status")
