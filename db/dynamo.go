@@ -33,7 +33,7 @@ func init() {
 	// User and task cols
 	user_proj = expression.NamesList(expression.Name("uid"), expression.Name("discordID"), expression.Name("discordName"), expression.Name("token"))
 	task_proj = expression.NamesList(
-		expression.Name("taskID"), expression.Name("content"), expression.Name("discordID"), expression.Name("lastModified"), expression.Name("status"), expression.Name("taskDate"), expression.Name("timeCreated"),
+		expression.Name("taskID"), expression.Name("content"), expression.Name("discordID"), expression.Name("lastModified"), expression.Name("taskStatus"), expression.Name("taskDate"), expression.Name("timeCreated"),
 	)
 }
 
@@ -229,6 +229,7 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 	}
 	table_name := "tasks"
 
+	fmt.Println(status)
 	input := &dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":content": {
