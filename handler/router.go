@@ -22,7 +22,9 @@ func bind_discord(router *gin.Engine) {
 
 func set_cors(router *gin.Engine) {
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173", "http://localhost:8080"}
+	config.AllowOrigins = []string{"http://localhost:5173", "http://localhost:8080", "http://127.0.0.1:5173", "https://068a6tnn1g.execute-api.us-east-2.amazonaws.com/staging"}
+	config.ExposeHeaders = []string{"set-cookie"}
+	config.AllowCredentials = true
 	router.Use(cors.New(config))
 }
 

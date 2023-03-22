@@ -9,6 +9,7 @@ import (
 	"app/wenda/db"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 const time_layout = "2006-01-02T15:04:05Z"
@@ -16,7 +17,11 @@ const time_layout = "2006-01-02T15:04:05Z"
 func GetTasks(c *gin.Context) {
 	uid := c.Query("uid")
 	// SELECT * FROM tasks WITH tasks.uid == uid
-	users_tasks := db.SelectUserTasks(uid)
+	users_tasks, err := db.GetUserTasks(uid)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to retrieve users tasks"})
+		return
+	}
 	if len(users_tasks) == 0 {
 		c.IndentedJSON(http.StatusOK, []string{})
 		return
@@ -27,7 +32,11 @@ func GetTasks(c *gin.Context) {
 func GetTaskByID(c *gin.Context) {
 	uid, taskid := c.Query("uid"), c.Query("taskID")
 	// SELECT * FROM tasks WITH tasks.uid == uid AND task.id == id
-	user_task := db.SelectUserTaskByID(uid, taskid)
+	user_task, err := db.GetUserTaskByID(uid, taskid)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to retrieve task"})
+		return
+	}
 	if (user_task == db.Task{}) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + taskid + " not found"})
 		return
@@ -43,8 +52,19 @@ func PostTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "JSON formatted incorrectly"})
 		return
 	}
-	new_task.DiscordID = db.SelectDiscordID(uid)
-	new_task.ID = db.InsertTask(new_task)
+	discord_id, err := db.GetDiscordID(uid)
+	if err != nil {
+		fmt.Println(err)
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to get discord ID for user"})
+		return
+	}
+
+	new_task.ID = uuid.New().String()
+	new_task.DiscordID = discord_id
+	new_task.TimeCreated = time.Now()
+	new_task.LastModified = time.Now()
+
+	db.AddTask(new_task)
 	c.IndentedJSON(http.StatusCreated, new_task)
 }
 
@@ -58,7 +78,7 @@ func UpdateTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
 		return
 	}
-	status, err := strconv.Atoi(c.Query("status"))
+	status, err := strconv.Atoi(c.Query("taskStatus"))
 	// verify status is valid
 	if err != nil || (status != 0 && status != 1 && status != 2) {
 		fmt.Println("[PUT] incorrectly formatted status")
@@ -66,19 +86,28 @@ func UpdateTask(c *gin.Context) {
 		return
 	}
 
-	if !db.UpdateTask(uid, taskid, content, status, task_date) {
-		fmt.Println("[PUT] cant find task id")
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + taskid + " not found"})
+	if err := db.UpdateTask(uid, taskid, content, status, task_date); err != nil {
+		fmt.Println("[PUT] failed to update")
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update " + taskid + " in db (maybe wrong id?)"})
 		return
 	}
-	c.IndentedJSON(http.StatusOK, db.SelectUserTaskByID(uid, taskid))
+	task, err := db.GetUserTaskByID(uid, taskid)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "error getting updated task " + taskid})
+		return
+	}
+	c.IndentedJSON(http.StatusOK, task)
 }
 
 func DeleteTask(c *gin.Context) {
 	uid, taskid := c.Query("uid"), c.Query("taskID")
-	task := db.SelectUserTaskByID(uid, taskid)
-	if !db.DeleteTask(uid, taskid) {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + taskid + " not found"})
+	task, err := db.GetUserTaskByID(uid, taskid)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "error getting task to delete " + taskid})
+		return
+	}
+	if err := db.DeleteTask(uid, taskid); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to delete " + taskid + " in db (maybe wrong id?)"})
 		return
 	}
 	c.IndentedJSON(http.StatusOK, task)

@@ -65,7 +65,6 @@ func create_table() bool {
 func init_test() {
 	load_env()
 	// Initialize DB
-	db.InitDB()
 	// Create Test Table
 	create_table()
 	// Use the test table

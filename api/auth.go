@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,8 +15,6 @@ import (
 )
 
 var API_ENDPOINT string = "https://discord.com/api/v10/oauth2/token"
-var REDIRECT_URI string = "http://localhost:8080/auth"
-var FRONTEND_URI string = "http://localhost:5173"
 
 // Initialize an empty map, eventually we want to be storing this in the DB
 // Maps state -> auth token
@@ -32,10 +31,11 @@ func GetAuth(c *gin.Context) {
 		"client_secret": {client_secret},
 		"grant_type":    {"authorization_code"},
 		"code":          {code},
-		"redirect_uri":  {REDIRECT_URI},
+		"redirect_uri":  {os.Getenv("FRONTEND_URL")},
 	}
 
 	// Post to token auth
+	fmt.Println(data)
 	resp, err := http.PostForm(API_ENDPOINT, data)
 	if err != nil {
 		fmt.Println("Issue posting to discord auth api")
@@ -45,6 +45,7 @@ func GetAuth(c *gin.Context) {
 	// Parse token into res
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
+	fmt.Println(res)
 
 	token := res["access_token"].(string)
 	// Hash the token
@@ -59,20 +60,11 @@ func GetAuth(c *gin.Context) {
 		DiscordName: discord_name,
 	}
 
-	db.InsertUser(new_user)
-
-	// Map hash -> token
-	User_id_token[authuid] = res["access_token"].(string) // type to string
-
-	// Set cookie for redirect
-	authid_cookie := http.Cookie{
-		Name:   "authuid",
-		Value:  authuid,
-		MaxAge: 604800, //1 week
-		Secure: true,
+	err = db.AddUser(new_user)
+	if err != nil {
+		log.Printf("Failed to add user to db %s", err)
 	}
-	http.SetCookie(c.Writer, &authid_cookie)
 
 	// Redirect back to frontend
-	c.Redirect(http.StatusMovedPermanently, FRONTEND_URI)
+	c.IndentedJSON(http.StatusOK, gin.H{"authuid": authuid})
 }
