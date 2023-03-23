@@ -20,19 +20,14 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Build binary
         run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -o main main.go && zip deployment.zip main
-      - name: Default deploy
-        uses: appleboy/lambda-action@master
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -o main main.go && zip deploy.zip main
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ${{ secrets.AWS_REGION }}
-          function_name: wenda 
-          zip_file: deployment.zip
-          role: arn:aws:iam::521432463985:user/github-actions
-          memory_size: 128
-          timeout: 20
-          handler: main
-          debug: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Upload zip to lambda
+        run: aws lambda update-function-code --function-name wenda --zip-file fileb://deploy.zip
 
     
