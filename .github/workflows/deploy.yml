@@ -30,5 +30,8 @@ jobs:
           function_name: wenda 
           zip_file: deployment.zip
           role: arn:aws:iam::521432463985:user/github-actions
+          memory_size: 128
+          timeout: 20
+          handler: main
 
     
