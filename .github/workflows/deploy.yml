@@ -33,5 +33,6 @@ jobs:
           memory_size: 128
           timeout: 20
           handler: main
+          debug: true
 
     
