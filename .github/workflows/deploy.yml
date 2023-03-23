@@ -19,8 +19,8 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Build binary
-          run: |
-            cd example && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -o main main.go && zip deployment.zip main
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -o main main.go && zip deployment.zip main
       - name: Default deploy
         uses: appleboy/lambda-action@master
         with:
