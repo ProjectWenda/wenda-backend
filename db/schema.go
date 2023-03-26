@@ -36,3 +36,14 @@ type DBTask struct {
 	Status       int    `json:"taskStatus"`
 	TaskDate     string `json:"taskDate"`
 }
+
+type RelationshipResponse struct {
+	ID       string `json:"id"`
+	Type     int    `json:"type"`
+	Nickname string `json:"nickname"`
+	User     struct {
+		ID       string `json:"id"`
+		Username string `json:"username"`
+		Avatar   string `json:"avatar"`
+	} `json:"user"`
+}

@@ -78,7 +78,11 @@ func GetDiscordUser(c *gin.Context) {
 
 func GetDiscordFriends(c *gin.Context) {
 	uid := c.Query("uid")
-	token := User_id_token[uid]
+	token, err := db.GetUserToken(uid)
+	if err != nil {
+		c.IndentedJSON(http.StatusExpectationFailed, gin.H{"message": "failed to get user discord token"})
+		return
+	}
 
 	req, err := http.NewRequest("GET", DISCORD_BASE+"/users/@me/relationships", nil)
 	if err != nil {
@@ -97,7 +101,7 @@ func GetDiscordFriends(c *gin.Context) {
 	}
 
 	// Parse token into res
-	var res map[string]interface{}
+	var res []db.RelationshipResponse
 	json.NewDecoder(resp.Body).Decode(&res)
 
 	c.IndentedJSON(http.StatusOK, res)
