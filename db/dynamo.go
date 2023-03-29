@@ -76,6 +76,19 @@ func filter_task_by_id(discord_id string, task_id string) *dynamodb.ScanInput {
 	return form_params(filt, task_proj, table_name)
 }
 
+func filter_task_by_three_id(discord_id string, t1 string, t2 string, t3 string) *dynamodb.ScanInput {
+	table_name := "tasks"
+	filt := expression.And(
+		expression.Name("discordID").Equal(expression.Value(discord_id)),
+		expression.Or(
+			expression.Name("taskID").Equal(expression.Value(t1)),
+			expression.Name("taskID").Equal(expression.Value(t2)),
+			expression.Name("taskID").Equal(expression.Value(t3)),
+		),
+	)
+	return form_params(filt, task_proj, table_name)
+}
+
 // QUERIES
 func add_object(in interface{}, table_name string) error {
 	av, err := dynamodbattribute.MarshalMap(in)
@@ -201,6 +214,42 @@ func GetUserTaskByID(uid string, task_id string) (Task, error) {
 	return task, nil
 }
 
+func GetThreeTask(uid string, t1 string, t2 string, t3 string) ([]Task, error) {
+	discord_id, err := GetDiscordID(uid)
+	if err != nil {
+		log.Printf("Failed to get discord id for %s", uid)
+		return []Task{}, errors.New("failed to get discord ID")
+	}
+
+	params := filter_task_by_three_id(discord_id, t1, t2, t3)
+
+	result, err := svc.Scan(params)
+	if err != nil {
+		log.Printf("Query API call failed: %s", err)
+		return []Task{}, errors.New("query failed")
+	}
+
+	tasks := make([]Task, 3)
+
+	for _, i := range result.Items {
+		task := Task{}
+		if err := dynamodbattribute.UnmarshalMap(i, &task); err != nil {
+			log.Printf("Failed to unmarshal user task %s", i)
+			return []Task{}, errors.New("failed to unmarshal data")
+		}
+		switch task.ID {
+		case t1:
+			tasks[0] = task
+		case t2:
+			tasks[1] = task
+		case t3:
+			tasks[2] = task
+		}
+	}
+
+	return tasks, nil
+}
+
 func AddTask(task Task) error {
 	table_name := "tasks"
 	formatted_task := DBTask{
@@ -257,6 +306,44 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 		ConditionExpression: aws.String("discordID = :id"),
 		ReturnValues:        aws.String("UPDATED_NEW"),
 		UpdateExpression:    aws.String("set content = :content, taskStatus = :status, taskDate = :date, lastModified = :modified"),
+	}
+
+	_, err = svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("Got error calling UpdateItem: %s", err)
+		return err
+	}
+
+	fmt.Println("Successfully updated task " + task_id)
+	return nil
+}
+
+func UpdateSortOrder(uid string, task_id string, sort_order string) error {
+	discord_id, err := GetDiscordID(uid)
+	if err != nil {
+		log.Printf("Failed to get discord id for %s", uid)
+		return errors.New("failed to get discord ID")
+	}
+	table_name := "tasks"
+
+	input := &dynamodb.UpdateItemInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":order": {
+				S: aws.String(sort_order),
+			},
+			":id": {
+				S: aws.String(discord_id),
+			},
+		},
+		TableName: aws.String(table_name),
+		Key: map[string]*dynamodb.AttributeValue{
+			"taskID": {
+				S: aws.String(task_id),
+			},
+		},
+		ConditionExpression: aws.String("discordID = :id"),
+		ReturnValues:        aws.String("UPDATED_NEW"),
+		UpdateExpression:    aws.String("set sortOrder = :order"),
 	}
 
 	_, err = svc.UpdateItem(input)

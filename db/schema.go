@@ -25,6 +25,7 @@ type Task struct {
 	Content      string    `json:"content"`
 	Status       int       `json:"taskStatus"`
 	TaskDate     time.Time `json:"taskDate"`
+	SortOrder    string    `json:"sortOrder"`
 }
 
 type DBTask struct {
