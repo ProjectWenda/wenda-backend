@@ -31,7 +31,7 @@ func get_order(discord_id string, date string) (TaskOrder, error) {
 	}
 
 	if len(result.Items) == 0 {
-		return TaskOrder{}, errors.New("no order found")
+		return TaskOrder{}, nil
 	}
 
 	var ord TaskOrder
@@ -110,4 +110,25 @@ func UpdateTaskOrder(uid string, task_id string, init_date string, new_date stri
 	}
 
 	return new_ord.Order, nil
+}
+
+func AppendTaskOrder(uid string, task_id string, date string) ([]string, error) {
+	discord_id, err := GetDiscordID(uid)
+	if err != nil {
+		log.Printf("Failed to get discord id for %s", uid)
+		return []string{}, errors.New("failed to get discord ID")
+	}
+
+	ord, err := get_order(discord_id, date)
+	if err != nil {
+		return []string{}, err
+	}
+
+	ord.Order = append(ord.Order, task_id)
+
+	if err := update_order(ord); err != nil {
+		return []string{}, err
+	}
+
+	return ord.Order, nil
 }

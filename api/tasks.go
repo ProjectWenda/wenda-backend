@@ -113,6 +113,7 @@ func PostTask(c *gin.Context) {
 	new_task.LastModified = time.Now()
 
 	db.AddTask(new_task)
+	db.AppendTaskOrder(uid, new_task.ID, new_task.TaskDate.Format(no_time_layout))
 	c.IndentedJSON(http.StatusCreated, new_task)
 }
 
