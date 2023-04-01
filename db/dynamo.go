@@ -1,6 +1,7 @@
 package db
 
 import (
+	"app/wenda/utils"
 	"errors"
 	"fmt"
 	"log"
@@ -76,15 +77,11 @@ func filter_task_by_id(discord_id string, task_id string) *dynamodb.ScanInput {
 	return form_params(filt, task_proj, table_name)
 }
 
-func filter_task_by_three_id(discord_id string, t1 string, t2 string, t3 string) *dynamodb.ScanInput {
-	table_name := "tasks"
+func filter_order_by_date(discord_id string, task_date string) *dynamodb.ScanInput {
+	table_name := "task_order"
 	filt := expression.And(
-		expression.Name("discordID").Equal(expression.Value(discord_id)),
-		expression.Or(
-			expression.Name("taskID").Equal(expression.Value(t1)),
-			expression.Name("taskID").Equal(expression.Value(t2)),
-			expression.Name("taskID").Equal(expression.Value(t3)),
-		),
+		expression.Name("discord_id").Equal(expression.Value(discord_id)),
+		expression.Name("task_date").Equal(expression.Value(task_date)),
 	)
 	return form_params(filt, task_proj, table_name)
 }
@@ -214,42 +211,6 @@ func GetUserTaskByID(uid string, task_id string) (Task, error) {
 	return task, nil
 }
 
-func GetThreeTask(uid string, t1 string, t2 string, t3 string) ([]Task, error) {
-	discord_id, err := GetDiscordID(uid)
-	if err != nil {
-		log.Printf("Failed to get discord id for %s", uid)
-		return []Task{}, errors.New("failed to get discord ID")
-	}
-
-	params := filter_task_by_three_id(discord_id, t1, t2, t3)
-
-	result, err := svc.Scan(params)
-	if err != nil {
-		log.Printf("Query API call failed: %s", err)
-		return []Task{}, errors.New("query failed")
-	}
-
-	tasks := make([]Task, 3)
-
-	for _, i := range result.Items {
-		task := Task{}
-		if err := dynamodbattribute.UnmarshalMap(i, &task); err != nil {
-			log.Printf("Failed to unmarshal user task %s", i)
-			return []Task{}, errors.New("failed to unmarshal data")
-		}
-		switch task.ID {
-		case t1:
-			tasks[0] = task
-		case t2:
-			tasks[1] = task
-		case t3:
-			tasks[2] = task
-		}
-	}
-
-	return tasks, nil
-}
-
 func AddTask(task Task) error {
 	table_name := "tasks"
 	formatted_task := DBTask{
@@ -318,42 +279,79 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 	return nil
 }
 
-func UpdateSortOrder(uid string, task_id string, sort_order string) error {
+func get_order(discord_id string, init_date string) (TaskOrder, error) {
+	params := filter_order_by_date(discord_id, init_date)
+
+	result, err := svc.Scan(params)
+	if err != nil {
+		log.Printf("Query API call failed: %s", err)
+		return TaskOrder{}, errors.New("query failed")
+	}
+
+	var ord TaskOrder
+	if dynamodbattribute.UnmarshalMap(result.Items[0], &ord); err != nil {
+		log.Printf("Failed to unmarshal task order")
+		return TaskOrder{}, errors.New("failed to unmarshal data")
+	}
+
+	return ord, nil
+}
+
+func update_order(ord TaskOrder) error {
+	table_name := "task_order"
+	av, err := dynamodbattribute.MarshalMap(ord)
+	if err != nil {
+		log.Printf("Failed to masrshal order")
+		return err
+	}
+	input := &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String(table_name),
+	}
+	_, err = svc.PutItem(input)
+	if err != nil {
+		log.Printf("Got error calling UpdateItem: %s", err)
+		return err
+	}
+	return nil
+}
+
+func UpdateTaskOrder(uid string, task_id string, init_date string, new_date string, next_task_id string, prev_task_id string) ([]string, error) {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
 		return errors.New("failed to get discord ID")
 	}
-	table_name := "tasks"
 
-	input := &dynamodb.UpdateItemInput{
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":order": {
-				S: aws.String(sort_order),
-			},
-			":id": {
-				S: aws.String(discord_id),
-			},
-		},
-		TableName: aws.String(table_name),
-		Key: map[string]*dynamodb.AttributeValue{
-			"taskID": {
-				S: aws.String(task_id),
-			},
-		},
-		ConditionExpression: aws.String("discordID = :id"),
-		ReturnValues:        aws.String("UPDATED_NEW"),
-		UpdateExpression:    aws.String("set sortOrder = :order"),
-	}
-
-	_, err = svc.UpdateItem(input)
+	init_ord, err := get_order(discord_id, init_date)
 	if err != nil {
-		log.Printf("Got error calling UpdateItem: %s", err)
-		return err
+		return []string{}, err
 	}
 
-	fmt.Println("Successfully updated task " + task_id)
-	return nil
+	var new_ord TaskOrder
+	if new_date == init_date {
+		new_ord = init_ord
+	} else {
+		new_ord, err = get_order(discord_id, new_date)
+		if err != nil {
+			return []string{}, err
+		}
+	}
+
+	init_ord.Order = utils.Remove(init_ord.Order, task_id)
+	new_ord.Order = utils.InsertBetween(new_ord.Order, task_id, prev_task_id, next_task_id)
+
+	if err := update_order(init_ord); err != nil {
+		return []string{}, err
+	}
+
+	if new_date != init_date {
+		if err := update_order(new_ord); err != nil {
+			return []string{}, err
+		}
+	}
+
+	return new_ord.Order, nil
 }
 
 func DeleteTask(uid string, task_id string) error {

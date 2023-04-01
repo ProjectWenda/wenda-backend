@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"app/wenda/db"
-	"app/wenda/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -30,21 +29,21 @@ func GetTasks(c *gin.Context) {
 }
 
 func GetTaskByID(c *gin.Context) {
-	uid, taskid := c.Query("uid"), c.Query("taskID")
-	user_task, err := db.GetUserTaskByID(uid, taskid)
+	uid, task_id := c.Query("uid"), c.Query("taskID")
+	user_task, err := db.GetUserTaskByID(uid, task_id)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to retrieve task"})
 		return
 	}
 	if (user_task == db.Task{}) {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + taskid + " not found"})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "task with id " + task_id + " not found"})
 		return
 	}
 	c.IndentedJSON(http.StatusOK, user_task)
 }
 
 func PostTask(c *gin.Context) {
-	uid, prev_taskid := c.Query("uid"), c.Query("behindID")
+	uid := c.Query("uid")
 	var new_task db.Task
 	if err := c.BindJSON(&new_task); err != nil {
 		fmt.Println(err)
@@ -56,24 +55,18 @@ func PostTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to get discord ID for user"})
 		return
 	}
-	prev_task, err := db.GetUserTaskByID(uid, prev_taskid)
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to get previous task from db"})
-		return
-	}
 
 	new_task.ID = uuid.New().String()
 	new_task.DiscordID = discord_id
 	new_task.TimeCreated = time.Now()
 	new_task.LastModified = time.Now()
-	new_task.SortOrder = utils.SortID(prev_task.SortOrder, "z")
 
 	db.AddTask(new_task)
 	c.IndentedJSON(http.StatusCreated, new_task)
 }
 
 func UpdateTask(c *gin.Context) {
-	uid, taskid := c.Query("uid"), c.Query("taskID")
+	uid, task_id := c.Query("uid"), c.Query("taskID")
 	content := c.Query("content")
 	time_str := c.Query("taskDate")
 	task_date, err := time.Parse(time_layout, time_str)
@@ -90,48 +83,41 @@ func UpdateTask(c *gin.Context) {
 		return
 	}
 
-	if err := db.UpdateTask(uid, taskid, content, status, task_date); err != nil {
+	if err := db.UpdateTask(uid, task_id, content, status, task_date); err != nil {
 		fmt.Println("[PUT] failed to update")
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update " + taskid + " in db (maybe wrong id?)"})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update " + task_id + " in db (maybe wrong id?)"})
 		return
 	}
-	task, err := db.GetUserTaskByID(uid, taskid)
+	task, err := db.GetUserTaskByID(uid, task_id)
 	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "error getting updated task " + taskid})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "error getting updated task " + task_id})
 		return
 	}
 	c.IndentedJSON(http.StatusOK, task)
 }
 
 func DeleteTask(c *gin.Context) {
-	uid, taskid := c.Query("uid"), c.Query("taskID")
-	task, err := db.GetUserTaskByID(uid, taskid)
+	uid, task_id := c.Query("uid"), c.Query("taskID")
+	task, err := db.GetUserTaskByID(uid, task_id)
 	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "error getting task to delete " + taskid})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "error getting task to delete " + task_id})
 		return
 	}
-	if err := db.DeleteTask(uid, taskid); err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to delete " + taskid + " in db (maybe wrong id?)"})
+	if err := db.DeleteTask(uid, task_id); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to delete " + task_id + " in db (maybe wrong id?)"})
 		return
 	}
 	c.IndentedJSON(http.StatusOK, task)
 }
 
 func ChangeOrder(c *gin.Context) {
-	uid, taskid, front, behind := c.Query("uid"), c.Query("taskID"), c.Query("frontID"), c.Query("behindID")
+	uid, task_id, init_date, new_date, next_task_id, prev_task_id := c.Query("uid"), c.Query("taskID"), c.Query("initialDate"), c.Query("newDate"), c.Query("nextTaskID"), c.Query("prevTaskID")
 
-	tasks, err := db.GetThreeTask(uid, taskid, front, behind)
+	ord, err := db.UpdateTaskOrder(uid, task_id, init_date, new_date, next_task_id, prev_task_id)
 	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to get tasks"})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update order" + task_id})
 		return
 	}
 
-	tasks[0].SortOrder = utils.SortID(tasks[1].SortOrder, tasks[2].SortOrder)
-
-	if err := db.UpdateSortOrder(uid, taskid, tasks[0].SortOrder); err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update sort order of " + taskid + " in db (maybe wrong ID??!)"})
-		return
-	}
-
-	c.IndentedJSON(http.StatusOK, tasks[0])
+	c.IndentedJSON(http.StatusOK, ord)
 }
