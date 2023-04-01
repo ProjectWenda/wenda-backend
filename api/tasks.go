@@ -69,12 +69,20 @@ func GetTasks(c *gin.Context) {
 		for _, id := range sort_order {
 			sorted_tasks = append(sorted_tasks, task_id_to_data[id]...)
 		}
-		fmt.Println(sort_order, sorted_tasks)
+
+		if len(sort_order) == 0 {
+			task_output[task_date] = TaskDayOutput{
+				Tasks: make([]db.Task, 0),
+			}
+			continue
+		}
 
 		task_output[task_date] = TaskDayOutput{
 			Tasks: sorted_tasks,
 		}
 	}
+
+	fmt.Println(task_output)
 
 	c.IndentedJSON(http.StatusOK, task_output)
 }

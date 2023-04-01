@@ -27,7 +27,7 @@ func get_order(discord_id string, date string) (TaskOrder, error) {
 	result, err := svc.Scan(params)
 	if err != nil {
 		log.Printf("Query API call failed: %s", err)
-		return TaskOrder{}, errors.New("query failed")
+		return TaskOrder{}, nil
 	}
 
 	if len(result.Items) == 0 {
