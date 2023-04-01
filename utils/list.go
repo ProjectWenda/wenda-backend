@@ -13,7 +13,7 @@ func InsertBetween[T comparable](l []T, item T, prevItem T, nextItem T) []T {
 	for i, el := range l {
 		if el == prevItem {
 			ret := append(l[:i+1], l[i:]...)
-			ret[i] = item
+			ret[i+1] = item
 			return ret
 		} else if el == nextItem {
 			if i-1 < 0 {

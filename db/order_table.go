@@ -22,7 +22,6 @@ func filter_order_by_date(discord_id string, task_date string) *dynamodb.ScanInp
 }
 
 func get_order(discord_id string, date string) (TaskOrder, error) {
-	fmt.Println("trying to get order " + date)
 	params := filter_order_by_date(discord_id, date)
 
 	result, err := svc.Scan(params)
@@ -32,7 +31,6 @@ func get_order(discord_id string, date string) (TaskOrder, error) {
 	}
 
 	if len(result.Items) == 0 {
-		fmt.Println("Failed to get order >_<")
 		return TaskOrder{}, errors.New("no order found")
 	}
 
@@ -42,7 +40,6 @@ func get_order(discord_id string, date string) (TaskOrder, error) {
 		return TaskOrder{}, errors.New("failed to unmarshal data")
 	}
 
-	fmt.Println(ord)
 	return ord, nil
 }
 
@@ -92,6 +89,7 @@ func UpdateTaskOrder(uid string, task_id string, init_date string, new_date stri
 		return []string{}, err
 	}
 
+	init_ord.Order = utils.Remove(init_ord.Order, task_id)
 	var new_ord TaskOrder
 	if new_date == init_date {
 		new_ord = init_ord
@@ -101,18 +99,14 @@ func UpdateTaskOrder(uid string, task_id string, init_date string, new_date stri
 			return []string{}, err
 		}
 	}
-
-	init_ord.Order = utils.Remove(init_ord.Order, task_id)
 	new_ord.Order = utils.InsertBetween(new_ord.Order, task_id, prev_task_id, next_task_id)
 
 	if err := update_order(init_ord); err != nil {
 		return []string{}, err
 	}
 
-	if new_date != init_date {
-		if err := update_order(new_ord); err != nil {
-			return []string{}, err
-		}
+	if err := update_order(new_ord); err != nil {
+		return []string{}, err
 	}
 
 	return new_ord.Order, nil
