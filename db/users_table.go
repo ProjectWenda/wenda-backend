@@ -10,6 +10,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
+// Cache discord ID
+var uid_to_discordID map[string]string
+
+func init() {
+	uid_to_discordID = make(map[string]string)
+}
+
 func filter_users_by_uid(uid string) *dynamodb.ScanInput {
 	table_name := "users"
 	filt := expression.Name("uid").Equal(expression.Value(uid))
@@ -35,11 +42,15 @@ func GetUser(uid string) (User, error) {
 }
 
 func GetDiscordID(uid string) (string, error) {
+	if id, exists := uid_to_discordID[uid]; exists {
+		return id, nil
+	}
 	user, err := GetUser(uid)
 	if err != nil {
 		log.Printf("Failed to get user %s", err)
 		return "", err
 	}
+	uid_to_discordID[uid] = user.DiscordID
 	return user.DiscordID, nil
 }
 
