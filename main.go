@@ -1,11 +1,13 @@
 package main
 
 import (
-	"app/wenda/utils"
+	"app/wenda/handler"
 	"context"
+	"flag"
 	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/joho/godotenv"
 )
@@ -24,24 +26,19 @@ func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 }
 
 func main() {
-	// dev := flag.Bool("dev", false, "")
-	// flag.Parse()
-	// if *dev {
-	// 	load_env()
-	// 	router := handler.Router()
-	// 	router.Run()
-	// 	return
-	// }
-
-	// // Load ENV
-	// router := handler.Router()
-	// // Run
-	// //router.Run("localhost:8080")
-	// ginLambda = ginadapter.New(router)
-	// lambda.Start(Handler)
-	//utils.SortID("a", "aam")
-	res := "z"
-	for i := 0; i < 50; i++ {
-		res = utils.SortID("a", res)
+	dev := flag.Bool("dev", false, "")
+	flag.Parse()
+	if *dev {
+		load_env()
+		router := handler.Router()
+		router.Run()
+		return
 	}
+
+	// Load ENV
+	router := handler.Router()
+	// Run
+	//router.Run("localhost:8080")
+	ginLambda = ginadapter.New(router)
+	lambda.Start(Handler)
 }
