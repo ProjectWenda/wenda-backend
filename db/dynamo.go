@@ -11,8 +11,9 @@ import (
 
 var svc *dynamodb.DynamoDB
 var (
-	user_proj expression.ProjectionBuilder
-	task_proj expression.ProjectionBuilder
+	user_proj  expression.ProjectionBuilder
+	task_proj  expression.ProjectionBuilder
+	order_proj expression.ProjectionBuilder
 )
 
 const time_layout = "2006-01-02T15:04:05Z"
@@ -27,9 +28,14 @@ func init() {
 	svc = dynamodb.New(sess)
 
 	// User and task cols
-	user_proj = expression.NamesList(expression.Name("uid"), expression.Name("discordID"), expression.Name("discordName"), expression.Name("token"))
+	user_proj = expression.NamesList(
+		expression.Name("uid"), expression.Name("discordID"), expression.Name("discordName"), expression.Name("token"),
+	)
 	task_proj = expression.NamesList(
 		expression.Name("taskID"), expression.Name("content"), expression.Name("discordID"), expression.Name("lastModified"), expression.Name("taskStatus"), expression.Name("taskDate"), expression.Name("timeCreated"),
+	)
+	order_proj = expression.NamesList(
+		expression.Name("discordID"), expression.Name("taskDate"), expression.Name("taskOrder"),
 	)
 }
 

@@ -13,6 +13,11 @@ import (
 )
 
 const time_layout = "2006-01-02T15:04:05Z"
+const no_time_layout = "2006-01-02"
+
+type TaskDayOutput struct {
+	Tasks []db.Task `json:"tasks"`
+}
 
 func GetTasks(c *gin.Context) {
 	uid := c.Query("uid")
@@ -25,7 +30,53 @@ func GetTasks(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, []string{})
 		return
 	}
-	c.IndentedJSON(http.StatusOK, users_tasks)
+
+	// Map tasks to date
+	task_output := make(map[string]TaskDayOutput)
+	task_id_to_data := make(map[string][]db.Task)
+
+	for _, task := range users_tasks {
+		task_date := task.TaskDate.Format(no_time_layout)
+		if entry, exists := task_output[task_date]; exists {
+			entry.Tasks = append(task_output[task_date].Tasks, task)
+			task_output[task_date] = entry
+		} else {
+			task_output[task_date] = TaskDayOutput{
+				Tasks: append([]db.Task{}, task),
+			}
+		}
+
+		if entry, exists := task_id_to_data[task.ID]; exists {
+			entry = append(entry, task)
+			task_id_to_data[task.ID] = entry
+		} else {
+			task_id_to_data[task.ID] = append([]db.Task{}, task)
+		}
+	}
+
+	// Output tasks based on sort
+	for task_date := range task_output {
+		sort_order, err := db.GetTaskOrder(uid, task_date)
+		if err != nil {
+			fmt.Println("failed to get task order for " + task_date)
+			//c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Failed to get task order"})
+			continue
+		}
+		fmt.Println(sort_order)
+
+		var sorted_tasks []db.Task
+
+		for _, id := range sort_order {
+			sorted_tasks = append(sorted_tasks, task_id_to_data[id]...)
+		}
+		fmt.Println(sort_order, sorted_tasks)
+
+		task_output[task_date] = TaskDayOutput{
+			Tasks: sorted_tasks,
+		}
+	}
+
+	c.IndentedJSON(http.StatusOK, task_output)
 }
 
 func GetTaskByID(c *gin.Context) {
@@ -111,9 +162,19 @@ func DeleteTask(c *gin.Context) {
 }
 
 func ChangeOrder(c *gin.Context) {
-	uid, task_id, init_date, new_date, next_task_id, prev_task_id := c.Query("uid"), c.Query("taskID"), c.Query("initialDate"), c.Query("newDate"), c.Query("nextTaskID"), c.Query("prevTaskID")
+	uid, task_id, init_datestr, new_datestr, next_task_id, prev_task_id := c.Query("uid"), c.Query("taskID"), c.Query("initialDate"), c.Query("newDate"), c.Query("nextTaskID"), c.Query("prevTaskID")
+	init_date, err := time.Parse(time_layout, init_datestr)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": init_datestr + " is provided in invalid format"})
+		return
+	}
+	new_date, err := time.Parse(time_layout, new_datestr)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": new_datestr + " is provided in invalid format"})
+		return
+	}
 
-	ord, err := db.UpdateTaskOrder(uid, task_id, init_date, new_date, next_task_id, prev_task_id)
+	ord, err := db.UpdateTaskOrder(uid, task_id, init_date.Format(no_time_layout), new_date.Format(no_time_layout), next_task_id, prev_task_id)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update order" + task_id})
 		return

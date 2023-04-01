@@ -3,6 +3,7 @@ package db
 import (
 	"app/wenda/utils"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,14 +15,15 @@ import (
 func filter_order_by_date(discord_id string, task_date string) *dynamodb.ScanInput {
 	table_name := "task_order"
 	filt := expression.And(
-		expression.Name("discord_id").Equal(expression.Value(discord_id)),
-		expression.Name("task_date").Equal(expression.Value(task_date)),
+		expression.Name("discordID").Equal(expression.Value(discord_id)),
+		expression.Name("taskDate").Equal(expression.Value(task_date)),
 	)
-	return form_params(filt, task_proj, table_name)
+	return form_params(filt, order_proj, table_name)
 }
 
-func get_order(discord_id string, init_date string) (TaskOrder, error) {
-	params := filter_order_by_date(discord_id, init_date)
+func get_order(discord_id string, date string) (TaskOrder, error) {
+	fmt.Println("trying to get order " + date)
+	params := filter_order_by_date(discord_id, date)
 
 	result, err := svc.Scan(params)
 	if err != nil {
@@ -29,12 +31,18 @@ func get_order(discord_id string, init_date string) (TaskOrder, error) {
 		return TaskOrder{}, errors.New("query failed")
 	}
 
+	if len(result.Items) == 0 {
+		fmt.Println("Failed to get order >_<")
+		return TaskOrder{}, errors.New("no order found")
+	}
+
 	var ord TaskOrder
 	if dynamodbattribute.UnmarshalMap(result.Items[0], &ord); err != nil {
-		log.Printf("Failed to unmarshal task order")
+		fmt.Println("Failed to unmarshal task order")
 		return TaskOrder{}, errors.New("failed to unmarshal data")
 	}
 
+	fmt.Println(ord)
 	return ord, nil
 }
 
@@ -55,6 +63,21 @@ func update_order(ord TaskOrder) error {
 		return err
 	}
 	return nil
+}
+
+func GetTaskOrder(uid string, task_date string) ([]string, error) {
+	discord_id, err := GetDiscordID(uid)
+	if err != nil {
+		log.Printf("Failed to get discord id for %s", uid)
+		return []string{}, errors.New("failed to get discord ID")
+	}
+
+	ord, err := get_order(discord_id, task_date)
+	if err != nil {
+		return []string{}, err
+	}
+
+	return ord.Order, nil
 }
 
 func UpdateTaskOrder(uid string, task_id string, init_date string, new_date string, next_task_id string, prev_task_id string) ([]string, error) {
