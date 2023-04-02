@@ -10,7 +10,7 @@ import (
 func bind_task_crud(router *gin.Engine) {
 	router.GET("/tasks", api.GetTasks)
 	router.GET("/task", api.GetTaskByID)
-	router.GET("/order", api.ChangeOrder)
+	router.POST("/order", api.ChangeOrder)
 	router.POST("/task", api.PostTask)
 	router.PUT("/task", api.UpdateTask)
 	router.DELETE("/task", api.DeleteTask)
