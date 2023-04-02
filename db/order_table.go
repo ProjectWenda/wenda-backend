@@ -31,7 +31,11 @@ func get_order(discord_id string, date string) (TaskOrder, error) {
 	}
 
 	if len(result.Items) == 0 {
-		return TaskOrder{}, nil
+		return TaskOrder{
+			DiscordID: discord_id,
+			TaskDate:  date,
+			Order:     make([]string, 0),
+		}, nil
 	}
 
 	var ord TaskOrder
@@ -101,8 +105,10 @@ func UpdateTaskOrder(uid string, task_id string, init_date string, new_date stri
 	}
 	new_ord.Order = utils.InsertBetween(new_ord.Order, task_id, prev_task_id, next_task_id)
 
-	if err := update_order(init_ord); err != nil {
-		return []string{}, err
+	if new_date != init_date {
+		if err := update_order(init_ord); err != nil {
+			return []string{}, err
+		}
 	}
 
 	if err := update_order(new_ord); err != nil {
@@ -123,6 +129,8 @@ func AppendTaskOrder(uid string, task_id string, date string) ([]string, error) 
 	if err != nil {
 		return []string{}, err
 	}
+
+	fmt.Println("ORD", ord)
 
 	ord.Order = append(ord.Order, task_id)
 

@@ -187,7 +187,7 @@ func ChangeOrder(c *gin.Context) {
 
 	ord, err := db.UpdateTaskOrder(uid, task_id, init_date.Format(no_time_layout), new_date.Format(no_time_layout), next_task_id, prev_task_id)
 	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update order" + task_id})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update order " + task_id})
 		return
 	}
 
