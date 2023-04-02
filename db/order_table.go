@@ -55,6 +55,26 @@ func update_order(ord TaskOrder) error {
 		log.Printf("Failed to masrshal order")
 		return err
 	}
+
+	if len(ord.Order) == 0 {
+		input := &dynamodb.DeleteItemInput{
+			Key: map[string]*dynamodb.AttributeValue{
+				"discordID": {
+					S: aws.String(ord.DiscordID),
+				},
+				"taskDate": {
+					S: aws.String(ord.TaskDate),
+				},
+			},
+			TableName: aws.String(table_name),
+		}
+		if _, err = svc.DeleteItem(input); err != nil {
+			log.Println("failed to delete >_<")
+			return err
+		}
+		return nil
+	}
+
 	input := &dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String(table_name),
