@@ -122,6 +122,47 @@ func AddTask(task Task) error {
 	return nil
 }
 
+func UpdateTaskDate(uid string, task_id string, task_date time.Time) error {
+	discord_id, err := GetDiscordID(uid)
+	if err != nil {
+		log.Printf("Failed to get discord id for %s", uid)
+		return errors.New("failed to get discord ID")
+	}
+	table_name := "tasks"
+
+	input := &dynamodb.UpdateItemInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":date": {
+				S: aws.String(task_date.Format(time_layout)),
+			},
+			":modified": {
+				S: aws.String(time.Now().Format(time_layout)),
+			},
+			":id": {
+				S: aws.String(discord_id),
+			},
+		},
+		TableName: aws.String(table_name),
+		Key: map[string]*dynamodb.AttributeValue{
+			"taskID": {
+				S: aws.String(task_id),
+			},
+		},
+		ConditionExpression: aws.String("discordID = :id"),
+		ReturnValues:        aws.String("UPDATED_NEW"),
+		UpdateExpression:    aws.String("set taskDate = :date, lastModified = :modified"),
+	}
+
+	_, err = svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("Got error calling UpdateItem: %s", err)
+		return err
+	}
+
+	fmt.Println("Successfully updated task " + task_id)
+	return nil
+}
+
 func UpdateTask(uid string, task_id string, content string, status int, task_date time.Time) error {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {

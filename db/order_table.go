@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -81,14 +82,14 @@ func GetTaskOrder(uid string, task_date string) ([]string, error) {
 	return ord.Order, nil
 }
 
-func UpdateTaskOrder(uid string, task_id string, init_date string, new_date string, next_task_id string, prev_task_id string) ([]string, error) {
+func UpdateTaskOrder(uid string, task_id string, init_date time.Time, new_date time.Time, next_task_id string, prev_task_id string) ([]string, error) {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
 		return []string{}, errors.New("failed to get discord ID")
 	}
 
-	init_ord, err := get_order(discord_id, init_date)
+	init_ord, err := get_order(discord_id, init_date.Format(no_time_layout))
 	if err != nil {
 		return []string{}, err
 	}
@@ -98,7 +99,13 @@ func UpdateTaskOrder(uid string, task_id string, init_date string, new_date stri
 	if new_date == init_date {
 		new_ord = init_ord
 	} else {
-		new_ord, err = get_order(discord_id, new_date)
+		// Moving across days
+		err := UpdateTaskDate(uid, task_id, new_date)
+		if err != nil {
+			return []string{}, err
+		}
+
+		new_ord, err = get_order(discord_id, new_date.Format(no_time_layout))
 		if err != nil {
 			return []string{}, err
 		}

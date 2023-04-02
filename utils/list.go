@@ -1,6 +1,9 @@
 package utils
 
 func Remove[T comparable](l []T, item T) []T {
+	if len(l) == 1 && l[0] == item {
+		return make([]T, 0)
+	}
 	for i, el := range l {
 		if el == item {
 			return append(l[:i], l[i+1:]...)

@@ -17,6 +17,7 @@ var (
 )
 
 const time_layout = "2006-01-02T15:04:05Z"
+const no_time_layout = "2006-01-02"
 
 func init() {
 	// Initialize DB connection
