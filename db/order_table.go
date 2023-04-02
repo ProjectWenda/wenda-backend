@@ -103,7 +103,12 @@ func UpdateTaskOrder(uid string, task_id string, init_date string, new_date stri
 			return []string{}, err
 		}
 	}
-	new_ord.Order = utils.InsertBetween(new_ord.Order, task_id, prev_task_id, next_task_id)
+
+	if len(new_ord.Order) == 0 {
+		new_ord.Order = append(new_ord.Order, task_id)
+	} else {
+		new_ord.Order = utils.InsertBetween(new_ord.Order, task_id, prev_task_id, next_task_id)
+	}
 
 	if new_date != init_date {
 		if err := update_order(init_ord); err != nil {
