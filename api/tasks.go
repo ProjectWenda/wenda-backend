@@ -167,6 +167,8 @@ func DeleteTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to delete " + task_id + " in db (maybe wrong id?)"})
 		return
 	}
+	db.RemoveTaskOrder(uid, task_id, task.TaskDate.Format(no_time_layout))
+
 	c.IndentedJSON(http.StatusOK, task)
 }
 

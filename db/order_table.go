@@ -132,3 +132,24 @@ func AppendTaskOrder(uid string, task_id string, date string) ([]string, error) 
 
 	return ord.Order, nil
 }
+
+func RemoveTaskOrder(uid string, task_id string, date string) ([]string, error) {
+	discord_id, err := GetDiscordID(uid)
+	if err != nil {
+		log.Printf("Failed to get discord id for %s", uid)
+		return []string{}, errors.New("failed to get discord ID")
+	}
+
+	ord, err := get_order(discord_id, date)
+	if err != nil {
+		return []string{}, err
+	}
+
+	ord.Order = utils.Remove(ord.Order, task_id)
+
+	if err := update_order(ord); err != nil {
+		return []string{}, err
+	}
+
+	return ord.Order, nil
+}
