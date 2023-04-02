@@ -27,6 +27,12 @@ type Task struct {
 	TaskDate     time.Time `json:"taskDate"`
 }
 
+type TaskOrder struct {
+	DiscordID string   `json:"discordID"`
+	TaskDate  string   `json:"taskDate"`
+	Order     []string `json:"taskOrder"`
+}
+
 type DBTask struct {
 	ID           string `json:"taskID"`
 	DiscordID    string `json:"discordID"`

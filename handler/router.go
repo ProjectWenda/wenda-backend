@@ -10,6 +10,7 @@ import (
 func bind_task_crud(router *gin.Engine) {
 	router.GET("/tasks", api.GetTasks)
 	router.GET("/task", api.GetTaskByID)
+	router.POST("/order", api.ChangeOrder)
 	router.POST("/task", api.PostTask)
 	router.PUT("/task", api.UpdateTask)
 	router.DELETE("/task", api.DeleteTask)
@@ -18,6 +19,11 @@ func bind_task_crud(router *gin.Engine) {
 func bind_discord(router *gin.Engine) {
 	router.GET("/user", api.GetDiscordUser)
 	router.GET("/friends", api.GetDiscordFriends)
+}
+
+func bind_auth(router *gin.Engine) {
+	router.GET("/auth", api.GetAuth)
+	router.GET("/botauth", api.BotAuth)
 }
 
 func set_cors(router *gin.Engine) {
@@ -36,6 +42,6 @@ func Router() *gin.Engine {
 	// Endpoints
 	bind_task_crud(router)
 	bind_discord(router)
-	router.GET("/auth", api.GetAuth)
+	bind_auth(router)
 	return router
 }
