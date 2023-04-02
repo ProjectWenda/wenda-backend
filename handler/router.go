@@ -21,6 +21,11 @@ func bind_discord(router *gin.Engine) {
 	router.GET("/friends", api.GetDiscordFriends)
 }
 
+func bind_auth(router *gin.Engine) {
+	router.GET("/auth", api.GetAuth)
+	router.GET("/botauth", api.BotAuth)
+}
+
 func set_cors(router *gin.Engine) {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:5173", "http://localhost:8080", "http://127.0.0.1:5173", "https://068a6tnn1g.execute-api.us-east-2.amazonaws.com/staging", "https://d2izisfs0v6me7.cloudfront.net/", "https://wenda.gg"}
@@ -37,6 +42,6 @@ func Router() *gin.Engine {
 	// Endpoints
 	bind_task_crud(router)
 	bind_discord(router)
-	router.GET("/auth", api.GetAuth)
+	bind_auth(router)
 	return router
 }

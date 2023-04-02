@@ -23,7 +23,36 @@ func filter_users_by_uid(uid string) *dynamodb.ScanInput {
 	return form_params(filt, user_proj, table_name)
 }
 
-func GetUser(uid string) (User, error) {
+func filter_users_by_discordID(discordID string) *dynamodb.ScanInput {
+	table_name := "users"
+	filt := expression.Name("discordID").Equal(expression.Value(discordID))
+	return form_params(filt, user_proj, table_name)
+}
+
+func GetUserByDiscordID(discordID string) (User, error) {
+	params := filter_users_by_discordID(discordID)
+
+	result, err := svc.Scan(params)
+	if err != nil {
+		log.Printf("Query API call failed: %s", err)
+		return User{}, errors.New("query failed")
+	}
+
+	if len(result.Items) == 0 {
+		fmt.Println("user with discord ID does not exist")
+		return User{}, nil
+	}
+
+	user := User{}
+	if err := dynamodbattribute.UnmarshalMap(result.Items[0], &user); err != nil {
+		log.Printf("Failed to unmarshal user data")
+		return User{}, errors.New("failed to unmarshal")
+	}
+
+	return user, nil
+}
+
+func GetUserByUID(uid string) (User, error) {
 	params := filter_users_by_uid(uid)
 
 	result, err := svc.Scan(params)
@@ -45,7 +74,7 @@ func GetDiscordID(uid string) (string, error) {
 	if id, exists := uid_to_discordID[uid]; exists {
 		return id, nil
 	}
-	user, err := GetUser(uid)
+	user, err := GetUserByUID(uid)
 	if err != nil {
 		log.Printf("Failed to get user %s", err)
 		return "", err
@@ -54,11 +83,23 @@ func GetDiscordID(uid string) (string, error) {
 	return user.DiscordID, nil
 }
 
-func GetUserToken(uid string) (string, error) {
-	user, err := GetUser(uid)
+func GetUID(discordID string) (string, error) {
+	user, err := GetUserByDiscordID(discordID)
 	if err != nil {
 		log.Printf("Failed to get user %s", err)
 		return "", err
+	}
+	return user.UID, nil
+}
+
+func GetUserToken(uid string) (string, error) {
+	user, err := GetUserByUID(uid)
+	if err != nil {
+		log.Printf("Failed to get user %s", err)
+		return "", err
+	}
+	if user == (User{}) {
+		return "", nil
 	}
 	return user.Token, nil
 }

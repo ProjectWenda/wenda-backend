@@ -12,6 +12,7 @@ import (
 	"app/wenda/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 var API_ENDPOINT string = "https://discord.com/api/v10/oauth2/token"
@@ -67,4 +68,33 @@ func GetAuth(c *gin.Context) {
 
 	// Redirect back to frontend
 	c.IndentedJSON(http.StatusOK, gin.H{"authuid": authuid})
+}
+
+func BotAuth(c *gin.Context) {
+	bot_uid, discordID, discord_name := c.Query("botUID"), c.Query("discordID"), c.Query("discordName")
+	if bot_uid != os.Getenv("BOT_UID") {
+		fmt.Println(bot_uid)
+		fmt.Println(os.Getenv("BOT_UID"))
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": "invalid bot uid"})
+		return
+	}
+
+	uid, err := db.GetUID(discordID)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to get uid of given user"})
+		return
+	}
+
+	// User is not in table
+	if uid == "" {
+		uid = utils.HashToken(uuid.New().String())
+		db.AddUser(db.User{
+			UID:         uid,
+			Token:       "",
+			DiscordID:   discordID,
+			DiscordName: discord_name,
+		})
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"authuid": uid})
 }
