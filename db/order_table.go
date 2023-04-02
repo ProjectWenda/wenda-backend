@@ -13,19 +13,31 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
-func filter_order_by_date(discord_id string, task_date string) *dynamodb.ScanInput {
+func query_order_by_date(discord_id string, task_date string) *dynamodb.QueryInput {
+	fmt.Println(discord_id, task_date)
 	table_name := "task_order"
-	filt := expression.And(
-		expression.Name("discordID").Equal(expression.Value(discord_id)),
-		expression.Name("taskDate").Equal(expression.Value(task_date)),
-	)
-	return form_params(filt, order_proj, table_name)
+	expr, _ := expression.NewBuilder().
+		WithKeyCondition(
+			expression.KeyAnd(
+				expression.Key("taskDate").Equal(expression.Value(task_date)), expression.Key("discordID").Equal(expression.Value(discord_id)),
+			)).
+		WithProjection(order_proj).
+		Build()
+
+	queryInput := &dynamodb.QueryInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(table_name),
+	}
+	return queryInput
 }
 
 func get_order(discord_id string, date string) (TaskOrder, error) {
-	params := filter_order_by_date(discord_id, date)
+	params := query_order_by_date(discord_id, date)
 
-	result, err := svc.Scan(params)
+	result, err := svc.Query(params)
 	if err != nil {
 		log.Printf("Query API call failed: %s", err)
 		return TaskOrder{}, nil
