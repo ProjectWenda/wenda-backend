@@ -174,8 +174,6 @@ func AppendTaskOrder(uid string, task_id string, date string) ([]string, error) 
 		return []string{}, err
 	}
 
-	fmt.Println("ORD", ord)
-
 	ord.Order = append(ord.Order, task_id)
 
 	if err := update_order(ord); err != nil {

@@ -2,6 +2,7 @@ package db
 
 import (
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -16,7 +17,7 @@ var (
 	order_proj expression.ProjectionBuilder
 )
 
-const time_layout = "2006-01-02T15:04:05Z"
+const time_layout = time.RFC3339
 const no_time_layout = "2006-01-02"
 
 func init() {

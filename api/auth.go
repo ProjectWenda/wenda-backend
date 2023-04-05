@@ -36,7 +36,6 @@ func GetAuth(c *gin.Context) {
 	}
 
 	// Post to token auth
-	fmt.Println(data)
 	resp, err := http.PostForm(API_ENDPOINT, data)
 	if err != nil {
 		fmt.Println("Issue posting to discord auth api")
@@ -46,7 +45,6 @@ func GetAuth(c *gin.Context) {
 	// Parse token into res
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
-	fmt.Println(res)
 
 	token := res["access_token"].(string)
 	// Hash the token
@@ -73,8 +71,6 @@ func GetAuth(c *gin.Context) {
 func BotAuth(c *gin.Context) {
 	bot_uid, discordID, discord_name := c.Query("botUID"), c.Query("discordID"), c.Query("discordName")
 	if bot_uid != os.Getenv("BOT_UID") {
-		fmt.Println(bot_uid)
-		fmt.Println(os.Getenv("BOT_UID"))
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": "invalid bot uid"})
 		return
 	}

@@ -12,15 +12,21 @@ import (
 	"github.com/google/uuid"
 )
 
-const time_layout = "2006-01-02T15:04:05Z"
+const time_layout = time.RFC3339
 const no_time_layout = "2006-01-02"
+const DEFAULT_TIMEZONE = "America/New_York"
 
 type TaskDayOutput struct {
 	Tasks []db.Task `json:"tasks"`
 }
 
 func GetTasks(c *gin.Context) {
-	uid := c.Query("uid")
+	uid, tz := c.Query("uid"), c.DefaultQuery("timezone", DEFAULT_TIMEZONE)
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "invalid timezone"})
+	}
+
 	users_tasks, err := db.GetUserTasks(uid)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to retrieve users tasks"})
@@ -36,7 +42,7 @@ func GetTasks(c *gin.Context) {
 	task_id_to_data := make(map[string][]db.Task)
 
 	for _, task := range users_tasks {
-		task_date := task.TaskDate.Format(no_time_layout)
+		task_date := task.TaskDate.In(loc).Format(no_time_layout)
 		if entry, exists := task_output[task_date]; exists {
 			entry.Tasks = append(task_output[task_date].Tasks, task)
 			task_output[task_date] = entry
@@ -62,7 +68,6 @@ func GetTasks(c *gin.Context) {
 			//c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Failed to get task order"})
 			continue
 		}
-		fmt.Println(sort_order)
 
 		var sorted_tasks []db.Task
 
@@ -102,7 +107,12 @@ func GetTaskByID(c *gin.Context) {
 }
 
 func PostTask(c *gin.Context) {
-	uid := c.Query("uid")
+	uid, tz := c.Query("uid"), c.DefaultQuery("timezone", DEFAULT_TIMEZONE)
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "invalid timezone"})
+	}
+
 	var new_task db.Task
 	if err := c.BindJSON(&new_task); err != nil {
 		fmt.Println(err)
@@ -121,7 +131,7 @@ func PostTask(c *gin.Context) {
 	new_task.LastModified = time.Now()
 
 	db.AddTask(new_task)
-	db.AppendTaskOrder(uid, new_task.ID, new_task.TaskDate.Format(no_time_layout))
+	db.AppendTaskOrder(uid, new_task.ID, new_task.TaskDate.In(loc).Format(no_time_layout))
 	c.IndentedJSON(http.StatusCreated, new_task)
 }
 
@@ -157,7 +167,11 @@ func UpdateTask(c *gin.Context) {
 }
 
 func DeleteTask(c *gin.Context) {
-	uid, task_id := c.Query("uid"), c.Query("taskID")
+	uid, task_id, tz := c.Query("uid"), c.Query("taskID"), c.DefaultQuery("timezone", DEFAULT_TIMEZONE)
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "invalid timezone"})
+	}
 	task, err := db.GetUserTaskByID(uid, task_id)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "error getting task to delete " + task_id})
@@ -167,13 +181,19 @@ func DeleteTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to delete " + task_id + " in db (maybe wrong id?)"})
 		return
 	}
-	db.RemoveTaskOrder(uid, task_id, task.TaskDate.Format(no_time_layout))
+	db.RemoveTaskOrder(uid, task_id, task.TaskDate.In(loc).Format(no_time_layout))
 
 	c.IndentedJSON(http.StatusOK, task)
 }
 
 func ChangeOrder(c *gin.Context) {
 	uid, task_id, init_datestr, new_datestr, next_task_id, prev_task_id := c.Query("uid"), c.Query("taskID"), c.Query("initialDate"), c.Query("newDate"), c.Query("nextTaskID"), c.Query("prevTaskID")
+	tz := c.DefaultQuery("timezone", DEFAULT_TIMEZONE)
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "invalid timezone"})
+	}
+
 	init_date, err := time.Parse(time_layout, init_datestr)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": init_datestr + " is provided in invalid format"})
@@ -185,7 +205,7 @@ func ChangeOrder(c *gin.Context) {
 		return
 	}
 
-	ord, err := db.UpdateTaskOrder(uid, task_id, init_date, new_date, next_task_id, prev_task_id)
+	ord, err := db.UpdateTaskOrder(uid, task_id, init_date.In(loc), new_date.In(loc), next_task_id, prev_task_id)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update order " + task_id})
 		return
