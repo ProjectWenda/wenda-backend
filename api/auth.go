@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"app/wenda/db"
 	"app/wenda/utils"
@@ -47,16 +48,20 @@ func GetAuth(c *gin.Context) {
 	json.NewDecoder(resp.Body).Decode(&res)
 
 	token := res["access_token"].(string)
+	refresh_token := res["refresh_token"].(string)
+
 	// Hash the token
 	authuid := utils.HashToken(token)
 
 	discord_id, discord_name := DiscordAuthData(token)
 
 	new_user := db.User{
-		UID:         authuid,
-		Token:       res["access_token"].(string),
-		DiscordID:   discord_id,
-		DiscordName: discord_name,
+		UID:          authuid,
+		Token:        token,
+		DiscordID:    discord_id,
+		DiscordName:  discord_name,
+		RefreshToken: refresh_token,
+		TimeCreated:  time.Now(),
 	}
 
 	err = db.AddUser(new_user)

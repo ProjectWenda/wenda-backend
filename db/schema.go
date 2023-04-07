@@ -11,10 +11,12 @@ const (
 )
 
 type User struct {
-	UID         string `json:"uid"`
-	Token       string `json:"token"`
-	DiscordID   string `json:"discordID"`
-	DiscordName string `json:"discordName"`
+	UID          string    `json:"uid"`
+	Token        string    `json:"token"`
+	DiscordID    string    `json:"discordID"`
+	DiscordName  string    `json:"discordName"`
+	RefreshToken string    `json:"refreshToken"`
+	TimeCreated  time.Time `json:"timeCreated"`
 }
 
 type Task struct {
