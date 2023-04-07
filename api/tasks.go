@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"app/wenda/db"
@@ -119,6 +120,11 @@ func PostTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "JSON formatted incorrectly"})
 		return
 	}
+	if len(strings.TrimSpace(new_task.Content)) == 0 {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "empty content provided"})
+		return
+	}
+
 	discord_id, err := db.GetDiscordID(uid)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to get discord ID for user"})
