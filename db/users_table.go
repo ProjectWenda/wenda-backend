@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
@@ -112,5 +113,27 @@ func AddUser(user User) error {
 		return err
 	}
 	fmt.Println("Successfully added " + user.DiscordName + " to table " + table_name)
+	return nil
+}
+
+func DeleteUID(uid string) error {
+	table_name := "users"
+
+	input := &dynamodb.DeleteItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"uid": {
+				S: aws.String(uid),
+			},
+		},
+		TableName: aws.String(table_name),
+	}
+
+	_, err := svc.DeleteItem(input)
+	if err != nil {
+		log.Printf("Got error calling DeleteItem: %s", err)
+		return err
+	}
+
+	fmt.Println("Deleted " + uid)
 	return nil
 }

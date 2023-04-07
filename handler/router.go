@@ -23,6 +23,7 @@ func bind_discord(router *gin.Engine) {
 
 func bind_auth(router *gin.Engine) {
 	router.GET("/auth", api.GetAuth)
+	router.DELETE("/auth", api.DeleteAuth)
 	router.GET("/botauth", api.BotAuth)
 }
 

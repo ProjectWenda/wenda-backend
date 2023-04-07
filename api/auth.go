@@ -68,6 +68,18 @@ func GetAuth(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"authuid": authuid})
 }
 
+func DeleteAuth(c *gin.Context) {
+	uid := c.Query("uid")
+
+	err := db.DeleteUID(uid)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"message": "deleted"})
+}
+
 func BotAuth(c *gin.Context) {
 	bot_uid, discordID, discord_name := c.Query("botUID"), c.Query("discordID"), c.Query("discordName")
 	if bot_uid != os.Getenv("BOT_UID") {
