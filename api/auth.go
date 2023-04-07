@@ -85,6 +85,49 @@ func DeleteAuth(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"message": "deleted"})
 }
 
+func RefreshToken(c *gin.Context) {
+	uid := c.Query("uid")
+
+	refresh_token, err := db.GetUserRefresh(uid)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
+		return
+	}
+
+	client_id, client_secret := os.Getenv("CLIENT_ID"), os.Getenv("CLIENT_SECRET")
+
+	// URL encode params to pass into refresh token
+	data := url.Values{
+		"client_id":     {client_id},
+		"client_secret": {client_secret},
+		"grant_type":    {"refresh_token"},
+		"refresh_token": {refresh_token},
+	}
+
+	resp, err := http.PostForm(API_ENDPOINT, data)
+
+	if err != nil {
+		fmt.Println("Issue posting to discord auth api")
+		// Redirect to an error page here
+		return
+	}
+
+	// Parse token into res
+	var res map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&res)
+
+	token := res["access_token"].(string)
+	refresh_token = res["refresh_token"].(string)
+
+	err = db.UpdateUser(uid, token, refresh_token)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update user in db"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"message": "token refreshed"})
+}
+
 func BotAuth(c *gin.Context) {
 	bot_uid, discordID, discord_name := c.Query("botUID"), c.Query("discordID"), c.Query("discordName")
 	if bot_uid != os.Getenv("BOT_UID") {
