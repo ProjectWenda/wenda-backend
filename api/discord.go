@@ -3,7 +3,7 @@ package api
 import (
 	"app/wenda/db"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +27,7 @@ type AuthResponse struct {
 func DiscordAuthData(token string) (string, string) {
 	req, err := http.NewRequest("GET", DISCORD_BASE+"/oauth2/@me", nil)
 	if err != nil {
-		fmt.Println("Failed to form discord authentication info req")
+		log.Println("Failed to form discord authentication info req")
 		return "", ""
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -35,7 +35,7 @@ func DiscordAuthData(token string) (string, string) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Failed to get discord authentication info")
+		log.Println("Failed to get discord authentication info")
 		return "", ""
 	}
 

@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -38,8 +37,10 @@ func GetAuth(c *gin.Context) {
 	// Post to token auth
 	resp, err := http.PostForm(API_ENDPOINT, data)
 	if err != nil {
-		fmt.Println("Issue posting to discord auth api")
+		log.Println("Error posting to discord auth api")
 		// Redirect to an error page here
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "error posting to discord auth api"})
+		return
 	}
 
 	// Parse token into res

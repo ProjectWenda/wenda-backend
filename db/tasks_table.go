@@ -98,7 +98,7 @@ func GetUserTaskByID(uid string, task_id string) (Task, error) {
 		return Task{}, errors.New("failed to unmarshal data")
 	}
 
-	fmt.Println(task.Content)
+	log.Println(task.Content)
 	return task, nil
 }
 
@@ -118,7 +118,7 @@ func AddTask(task Task) error {
 		log.Printf("Failed to add task %s", err)
 		return err
 	}
-	fmt.Println("Successfully added " + task.Content + " to table " + table_name)
+	log.Println("Successfully added " + task.Content + " to table " + table_name)
 	return nil
 }
 
@@ -159,7 +159,7 @@ func UpdateTaskDate(uid string, task_id string, task_date time.Time) error {
 		return err
 	}
 
-	fmt.Println("Successfully updated task " + task_id)
+	log.Println("Successfully updated task " + task_id)
 	return nil
 }
 
@@ -171,7 +171,7 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 	}
 	table_name := "tasks"
 
-	fmt.Println(status)
+	log.Println(status)
 	input := &dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":content": {
@@ -207,7 +207,7 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 		return err
 	}
 
-	fmt.Println("Successfully updated task " + task_id)
+	log.Println("Successfully updated task " + task_id)
 	return nil
 }
 
@@ -240,6 +240,6 @@ func DeleteTask(uid string, task_id string) error {
 		return err
 	}
 
-	fmt.Println("Deleted " + task_id)
+	log.Println("Deleted " + task_id)
 	return nil
 }

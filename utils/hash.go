@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"log"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -9,7 +9,7 @@ import (
 func HashToken(token string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(token), bcrypt.DefaultCost)
 	if err != nil {
-		fmt.Println("Error hashing", err)
+		log.Println("Error hashing", err)
 	}
 	return string(bytes)
 }

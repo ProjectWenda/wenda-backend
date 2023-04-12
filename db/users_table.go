@@ -2,7 +2,6 @@ package db
 
 import (
 	"errors"
-	"fmt"
 	"log"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -39,7 +38,7 @@ func GetUserByDiscordID(discordID string) (User, error) {
 	}
 
 	if len(result.Items) == 0 {
-		fmt.Println("user with discord ID does not exist")
+		log.Println("user with discord ID does not exist")
 		return User{}, nil
 	}
 
@@ -111,6 +110,6 @@ func AddUser(user User) error {
 		log.Printf("failed to add user %s", err)
 		return err
 	}
-	fmt.Println("Successfully added " + user.DiscordName + " to table " + table_name)
+	log.Println("Successfully added " + user.DiscordName + " to table " + table_name)
 	return nil
 }

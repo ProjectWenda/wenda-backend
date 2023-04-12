@@ -3,7 +3,6 @@ package db
 import (
 	"app/wenda/utils"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 )
 
 func query_order_by_date(discord_id string, task_date string) *dynamodb.QueryInput {
-	fmt.Println(discord_id, task_date)
+	log.Println(discord_id, task_date)
 	table_name := "task_order"
 	expr, _ := expression.NewBuilder().
 		WithKeyCondition(
@@ -53,7 +52,7 @@ func get_order(discord_id string, date string) (TaskOrder, error) {
 
 	var ord TaskOrder
 	if dynamodbattribute.UnmarshalMap(result.Items[0], &ord); err != nil {
-		fmt.Println("Failed to unmarshal task order")
+		log.Println("Failed to unmarshal task order")
 		return TaskOrder{}, errors.New("failed to unmarshal data")
 	}
 

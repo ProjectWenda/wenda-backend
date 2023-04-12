@@ -5,6 +5,7 @@ import (
 	"app/wenda/handler"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -27,16 +28,16 @@ type PostBody struct {
 func (body PostBody) str() string {
 	bodystr, err := json.Marshal(body)
 	if err != nil {
-		fmt.Println("Issue marshaling")
+		log.Println("Issue marshaling")
 	}
 	return string(bodystr)
 }
 
 func load_env() {
 	if err := godotenv.Load("../.env"); err != nil {
-		fmt.Println("Error loading .env file")
+		log.Println("Error loading .env file")
 	}
-	fmt.Println(os.Getenv("TEST_UID"))
+	log.Println(os.Getenv("TEST_UID"))
 	UID = os.Getenv("TEST_UID")
 }
 

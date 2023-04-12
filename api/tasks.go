@@ -1,7 +1,7 @@
 package api
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -65,7 +65,7 @@ func GetTasks(c *gin.Context) {
 	for task_date := range task_output {
 		sort_order, err := db.GetTaskOrder(uid, task_date)
 		if err != nil {
-			fmt.Println("failed to get task order for " + task_date)
+			log.Println("failed to get task order for " + task_date)
 			//c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Failed to get task order"})
 			continue
 		}
@@ -88,7 +88,7 @@ func GetTasks(c *gin.Context) {
 		}
 	}
 
-	fmt.Println(task_output)
+	log.Println(task_output)
 
 	c.IndentedJSON(http.StatusOK, task_output)
 }
@@ -116,7 +116,7 @@ func PostTask(c *gin.Context) {
 
 	var new_task db.Task
 	if err := c.BindJSON(&new_task); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "JSON formatted incorrectly"})
 		return
 	}
@@ -147,20 +147,20 @@ func UpdateTask(c *gin.Context) {
 	time_str := c.Query("taskDate")
 	task_date, err := time.Parse(time_layout, time_str)
 	if err != nil {
-		fmt.Println("[PUT] incorrectly formatted time")
+		log.Println("[PUT] incorrectly formatted time")
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "incorrectly formatted time"})
 		return
 	}
 	status, err := strconv.Atoi(c.Query("taskStatus"))
 	// verify status is valid
 	if err != nil || (status != 0 && status != 1 && status != 2) {
-		fmt.Println("[PUT] incorrectly formatted status")
+		log.Println("[PUT] incorrectly formatted status")
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "status should be 0, 1, or 2"})
 		return
 	}
 
 	if err := db.UpdateTask(uid, task_id, content, status, task_date); err != nil {
-		fmt.Println("[PUT] failed to update")
+		log.Println("[PUT] failed to update")
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to update " + task_id + " in db (maybe wrong id?)"})
 		return
 	}
