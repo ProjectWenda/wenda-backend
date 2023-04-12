@@ -1,6 +1,7 @@
 package db
 
 import (
+	e "app/wenda/errors"
 	"app/wenda/utils"
 	"errors"
 	"log"
@@ -39,7 +40,7 @@ func get_order(discord_id string, date string) (TaskOrder, error) {
 	result, err := svc.Query(params)
 	if err != nil {
 		log.Printf("Query API call failed: %s", err)
-		return TaskOrder{}, nil
+		return TaskOrder{}, e.ErrDBQueryFail
 	}
 
 	if len(result.Items) == 0 {
@@ -47,13 +48,13 @@ func get_order(discord_id string, date string) (TaskOrder, error) {
 			DiscordID: discord_id,
 			TaskDate:  date,
 			Order:     make([]string, 0),
-		}, nil
+		}, e.ErrOrderNotFound
 	}
 
 	var ord TaskOrder
 	if dynamodbattribute.UnmarshalMap(result.Items[0], &ord); err != nil {
 		log.Println("Failed to unmarshal task order")
-		return TaskOrder{}, errors.New("failed to unmarshal data")
+		return TaskOrder{}, e.ErrOrderNotFound
 	}
 
 	return ord, nil
@@ -63,8 +64,8 @@ func update_order(ord TaskOrder) error {
 	table_name := "task_order"
 	av, err := dynamodbattribute.MarshalMap(ord)
 	if err != nil {
-		log.Printf("Failed to masrshal order")
-		return err
+		log.Printf("Failed to marshal order")
+		return e.ErrInvalidStructure
 	}
 
 	if len(ord.Order) == 0 {
@@ -80,8 +81,8 @@ func update_order(ord TaskOrder) error {
 			TableName: aws.String(table_name),
 		}
 		if _, err = svc.DeleteItem(input); err != nil {
-			log.Println("failed to delete >_<")
-			return err
+			log.Println("failed to delete")
+			return e.ErrOrderDeleteFail
 		}
 		return nil
 	}
@@ -93,7 +94,7 @@ func update_order(ord TaskOrder) error {
 	_, err = svc.PutItem(input)
 	if err != nil {
 		log.Printf("Got error calling UpdateItem: %s", err)
-		return err
+		return e.ErrOrderUpdateFail
 	}
 	return nil
 }
@@ -102,7 +103,7 @@ func GetTaskOrder(uid string, task_date string) ([]string, error) {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
-		return []string{}, errors.New("failed to get discord ID")
+		return []string{}, err
 	}
 
 	ord, err := get_order(discord_id, task_date)
@@ -117,7 +118,7 @@ func UpdateTaskOrder(uid string, task_id string, init_date time.Time, new_date t
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
-		return []string{}, errors.New("failed to get discord ID")
+		return []string{}, err
 	}
 
 	init_ord, err := get_order(discord_id, init_date.Format(no_time_layout))
@@ -137,7 +138,7 @@ func UpdateTaskOrder(uid string, task_id string, init_date time.Time, new_date t
 		}
 
 		new_ord, err = get_order(discord_id, new_date.Format(no_time_layout))
-		if err != nil {
+		if err != nil && !errors.Is(err, e.ErrOrderNotFound) {
 			return []string{}, err
 		}
 	}
@@ -165,11 +166,11 @@ func AppendTaskOrder(uid string, task_id string, date string) ([]string, error) 
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
-		return []string{}, errors.New("failed to get discord ID")
+		return []string{}, err
 	}
 
 	ord, err := get_order(discord_id, date)
-	if err != nil {
+	if err != nil && !errors.Is(err, e.ErrOrderNotFound) {
 		return []string{}, err
 	}
 
@@ -186,7 +187,7 @@ func RemoveTaskOrder(uid string, task_id string, date string) ([]string, error) 
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
-		return []string{}, errors.New("failed to get discord ID")
+		return []string{}, err
 	}
 
 	ord, err := get_order(discord_id, date)

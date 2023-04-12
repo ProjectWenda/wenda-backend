@@ -1,7 +1,7 @@
 package db
 
 import (
-	"errors"
+	e "app/wenda/errors"
 	"log"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -34,18 +34,18 @@ func GetUserByDiscordID(discordID string) (User, error) {
 	result, err := svc.Scan(params)
 	if err != nil {
 		log.Printf("Query API call failed: %s", err)
-		return User{}, errors.New("query failed")
+		return User{}, e.ErrDBQueryFail
 	}
 
 	if len(result.Items) == 0 {
 		log.Println("user with discord ID does not exist")
-		return User{}, nil
+		return User{}, e.ErrUserNotFound
 	}
 
 	user := User{}
 	if err := dynamodbattribute.UnmarshalMap(result.Items[0], &user); err != nil {
 		log.Printf("Failed to unmarshal user data")
-		return User{}, errors.New("failed to unmarshal")
+		return User{}, e.ErrInvalidStructure
 	}
 
 	return user, nil
@@ -57,13 +57,17 @@ func GetUserByUID(uid string) (User, error) {
 	result, err := svc.Scan(params)
 	if err != nil {
 		log.Printf("Query API call failed: %s", err)
-		return User{}, errors.New("query failed")
+		return User{}, e.ErrDBQueryFail
 	}
 
 	user := User{}
+	if len(result.Items) == 0 {
+		return User{}, e.ErrUserNotFound
+	}
+
 	if err := dynamodbattribute.UnmarshalMap(result.Items[0], &user); err != nil {
 		log.Printf("Failed to unmarshal user data")
-		return User{}, errors.New("failed to unmarshal")
+		return User{}, e.ErrInvalidStructure
 	}
 
 	return user, nil

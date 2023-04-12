@@ -1,7 +1,7 @@
 package db
 
 import (
-	"errors"
+	e "app/wenda/errors"
 	"fmt"
 	"log"
 	"time"
@@ -31,7 +31,7 @@ func add_object(in interface{}, table_name string) error {
 	av, err := dynamodbattribute.MarshalMap(in)
 	if err != nil {
 		log.Printf("Failed to marshal task %s", err)
-		return err
+		return e.ErrInvalidStructure
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -42,7 +42,7 @@ func add_object(in interface{}, table_name string) error {
 	_, err = svc.PutItem(input)
 	if err != nil {
 		log.Printf("Got error calling PutItem: %s\n", err)
-		return err
+		return e.ErrDBAddFail
 	}
 
 	return nil
@@ -52,7 +52,7 @@ func GetUserTasks(uid string) ([]Task, error) {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
-		return []Task{}, errors.New("failed to get discord ID")
+		return []Task{}, err
 	}
 
 	params := filter_tasks_by_discordID(discord_id)
@@ -60,7 +60,7 @@ func GetUserTasks(uid string) ([]Task, error) {
 	result, err := svc.Scan(params)
 	if err != nil {
 		log.Printf("Query API call failed: %s", err)
-		return []Task{}, errors.New("query failed")
+		return []Task{}, e.ErrDBQueryFail
 	}
 
 	var tasks []Task
@@ -69,7 +69,7 @@ func GetUserTasks(uid string) ([]Task, error) {
 		task := Task{}
 		if err := dynamodbattribute.UnmarshalMap(i, &task); err != nil {
 			log.Printf("Failed to unmarshal user task %s", i)
-			return []Task{}, errors.New("failed to unmarshal data")
+			return []Task{}, e.ErrInvalidStructure
 		}
 		tasks = append(tasks, task)
 	}
@@ -81,7 +81,7 @@ func GetUserTaskByID(uid string, task_id string) (Task, error) {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
-		return Task{}, errors.New("failed to get discord ID")
+		return Task{}, err
 	}
 
 	params := filter_task_by_id(discord_id, task_id)
@@ -89,16 +89,15 @@ func GetUserTaskByID(uid string, task_id string) (Task, error) {
 	result, err := svc.Scan(params)
 	if err != nil {
 		log.Printf("Query API call failed: %s", err)
-		return Task{}, errors.New("query failed")
+		return Task{}, e.ErrDBQueryFail
 	}
 
 	task := Task{}
 	if err := dynamodbattribute.UnmarshalMap(result.Items[0], &task); err != nil {
-		log.Printf("Failed to unmarshal user data")
-		return Task{}, errors.New("failed to unmarshal data")
+		log.Println("Failed to unmarshal user data")
+		return Task{}, e.ErrInvalidStructure
 	}
 
-	log.Println(task.Content)
 	return task, nil
 }
 
@@ -126,7 +125,7 @@ func UpdateTaskDate(uid string, task_id string, task_date time.Time) error {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
-		return errors.New("failed to get discord ID")
+		return err
 	}
 	table_name := "tasks"
 
@@ -156,7 +155,7 @@ func UpdateTaskDate(uid string, task_id string, task_date time.Time) error {
 	_, err = svc.UpdateItem(input)
 	if err != nil {
 		log.Printf("Got error calling UpdateItem: %s", err)
-		return err
+		return e.ErrTaskUpdateFail
 	}
 
 	log.Println("Successfully updated task " + task_id)
@@ -167,11 +166,10 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
-		return errors.New("failed to get discord ID")
+		return err
 	}
 	table_name := "tasks"
 
-	log.Println(status)
 	input := &dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":content": {
@@ -204,7 +202,7 @@ func UpdateTask(uid string, task_id string, content string, status int, task_dat
 	_, err = svc.UpdateItem(input)
 	if err != nil {
 		log.Printf("Got error calling UpdateItem: %s", err)
-		return err
+		return e.ErrTaskUpdateFail
 	}
 
 	log.Println("Successfully updated task " + task_id)
@@ -215,7 +213,7 @@ func DeleteTask(uid string, task_id string) error {
 	discord_id, err := GetDiscordID(uid)
 	if err != nil {
 		log.Printf("Failed to get discord id for %s", uid)
-		return errors.New("failed to get discord ID")
+		return err
 	}
 	table_name := "tasks"
 
@@ -237,7 +235,7 @@ func DeleteTask(uid string, task_id string) error {
 	_, err = svc.DeleteItem(input)
 	if err != nil {
 		log.Printf("Got error calling DeleteItem: %s", err)
-		return err
+		return e.ErrTaskDeleteFail
 	}
 
 	log.Println("Deleted " + task_id)
