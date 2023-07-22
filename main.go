@@ -2,7 +2,6 @@ package main
 
 import (
 	"app/wenda/handler"
-	"app/wenda/utils"
 	"context"
 	"flag"
 	"log"
@@ -27,7 +26,6 @@ func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 }
 
 func main() {
-	utils.InfoLogger.Println("test")
 	dev := flag.Bool("dev", false, "")
 	flag.Parse()
 	if *dev {
