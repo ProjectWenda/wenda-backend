@@ -31,7 +31,7 @@ func init() {
 
 	// User and task cols
 	user_proj = expression.NamesList(
-		expression.Name("uid"), expression.Name("discordID"), expression.Name("discordName"), expression.Name("token"),
+		expression.Name("uid"), expression.Name("discordID"), expression.Name("discordName"), expression.Name("token"), expression.Name("refreshToken"),
 	)
 	task_proj = expression.NamesList(
 		expression.Name("taskID"), expression.Name("content"), expression.Name("discordID"), expression.Name("lastModified"), expression.Name("taskStatus"), expression.Name("taskDate"), expression.Name("timeCreated"),
